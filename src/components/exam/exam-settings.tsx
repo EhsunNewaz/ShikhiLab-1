@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Check } from 'lucide-react';
+import { Settings, Check, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useMounted } from '@/hooks/use-mounted';
+import { Slider } from '@/components/ui/slider';
 
 type ContrastOption = 'black-on-white' | 'yellow-on-black' | 'white-on-black';
 type TextSizeOption = 'standard' | 'large' | 'extra-large';
@@ -106,6 +107,12 @@ export function ExamSettings() {
                 {option.label}
             </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Volume</DropdownMenuLabel>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <Volume2 className="h-4 w-4 mr-2"/>
+            <Slider defaultValue={[100]} max={100} step={1} className="w-[150px]"/>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
