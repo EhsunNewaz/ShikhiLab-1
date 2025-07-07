@@ -63,60 +63,79 @@ function QuestionRenderer({
   onAnswerChange: (questionId: string, value: any) => void;
   isSubmitted: boolean;
 }) {
-  const isCorrect = isSubmitted && JSON.stringify(answer) === JSON.stringify(question.correctAnswer);
+  let isCorrect = false;
+  if (isSubmitted) {
+    if (question.type === 'multiple-answer') {
+      const userAnswerSorted = [...(answer || [])].sort();
+      const correctAnswerSorted = [...(question.correctAnswer || [])].sort();
+      isCorrect = JSON.stringify(userAnswerSorted) === JSON.stringify(correctAnswerSorted);
+    } else {
+      isCorrect = JSON.stringify(answer) === JSON.stringify(question.correctAnswer);
+    }
+  }
+
+  const renderFeedback = () => {
+    if (!isSubmitted) return null;
+    return (
+      <div className="mt-4 p-3 text-sm bg-muted/50 rounded-lg border">
+        {!isCorrect && (
+          <p className="font-semibold text-destructive">
+            Correct Answer: <span className="font-normal">
+              {Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}
+            </span>
+          </p>
+        )}
+        <p className="font-semibold mt-2">Explanation:</p>
+        <p>{question.explanation}</p>
+      </div>
+    );
+  };
+
 
   switch (question.type) {
     case 'fill-in-the-blank':
       return (
-        <div>
-          <div className="flex items-center gap-2">
-            <span>{question.questionText.split('___')[0]}</span>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Label htmlFor={question.id}>{question.questionText.split('___')[0]}</Label>
             <ExamInput
+              id={question.id}
               value={answer || ''}
               onChange={e => onAnswerChange(question.id, e.target.value)}
               disabled={isSubmitted}
+              className={cn(isSubmitted && (isCorrect ? 'border-green-500' : 'border-destructive'))}
             />
-            <span>{question.questionText.split('___')[1]}</span>
+            <Label htmlFor={question.id}>{question.questionText.split('___')[1]}</Label>
           </div>
-          {isSubmitted && (
-             <div className="mt-3 p-3 text-sm bg-muted/50 rounded-lg">
-                <p className={cn(isCorrect ? "text-green-700 font-bold" : "text-destructive font-bold")}>
-                    Your answer: {answer || '(No answer)'}
-                </p>
-                {!isCorrect && <p><span className="font-bold">Correct Answer:</span> {question.correctAnswer}</p>}
-                <p><span className="font-bold">Explanation:</span> {question.explanation}</p>
-            </div>
-          )}
+          {renderFeedback()}
         </div>
       );
     case 'multiple-choice':
       return (
-         <div>
+         <div className="space-y-4">
+            <p className="font-semibold">{question.questionText}</p>
             <ExamRadioGroup
               value={answer}
               onValueChange={(value) => onAnswerChange(question.id, value)}
               disabled={isSubmitted}
-              className="space-y-1"
+              className="space-y-2"
             >
               {question.options.map(opt => {
                  const isSelected = answer === opt;
                  const isCorrectOption = question.correctAnswer === opt;
                  return (
                     <div key={opt} className={cn(
-                        "flex items-center space-x-2 p-2 rounded-md",
-                        isSubmitted && isCorrectOption && "bg-green-100 border-green-300 border",
-                        isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-300 border"
+                        "flex items-center space-x-2 p-3 rounded-lg border",
+                        isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
+                        isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500",
+                        !isSubmitted && "bg-background"
                     )}>
                         <ExamRadioGroupItem value={opt} id={`${question.id}-${opt}`} label={opt} disabled={isSubmitted}/>
                     </div>
                 )
               })}
             </ExamRadioGroup>
-            {isSubmitted && (
-                 <div className="mt-3 p-3 text-sm bg-muted/50 rounded-lg">
-                    <p><span className="font-bold">Explanation:</span> {question.explanation}</p>
-                </div>
-            )}
+            {renderFeedback()}
         </div>
       );
     case 'multiple-answer':
@@ -127,21 +146,24 @@ function QuestionRenderer({
         } else {
           currentAnswers.add(option);
         }
-        onAnswerChange(question.id, Array.from(currentAnswers));
+        onAnswerChange(question.id, Array.from(currentAnswers).sort());
       };
       return (
-         <div>
-            <div className="flex flex-col gap-1">
+         <div className="space-y-4">
+            <p className="font-semibold">{question.questionText}</p>
+            <div className="flex flex-col gap-2">
               {question.options.map(opt => {
                 const isSelected = (answer || []).includes(opt);
                 const isCorrectOption = (question.correctAnswer || []).includes(opt);
                  return (
                     <div key={opt} className={cn(
-                        "flex items-center space-x-2 p-2 rounded-md",
-                        isSubmitted && isCorrectOption && "bg-green-100 border-green-300 border",
-                        isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-300 border"
+                        "flex items-center space-x-2 p-3 rounded-lg border",
+                        isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
+                        isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500",
+                        !isSubmitted && "bg-background"
                     )}>
                          <ExamCheckbox
+                            id={`${question.id}-${opt}`}
                             checked={isSelected}
                             onCheckedChange={() => handleCheckboxChange(opt)}
                             label={opt}
@@ -151,12 +173,7 @@ function QuestionRenderer({
                 )
               })}
             </div>
-            {isSubmitted && (
-                 <div className="mt-3 p-3 text-sm bg-muted/50 rounded-lg">
-                    <p><span className="font-bold">Correct Answers:</span> {(question.correctAnswer || []).join(', ')}</p>
-                    <p><span className="font-bold">Explanation:</span> {question.explanation}</p>
-                </div>
-            )}
+            {renderFeedback()}
         </div>
       );
     default:
@@ -178,22 +195,23 @@ function QuestionPanel({
     onAnswerChange: (questionId: string, value: any) => void,
     isSubmitted: boolean
 }) {
-  // A real implementation would group questions (e.g., 1-5, 6-10)
   const currentQuestion = questions[currentQuestionIndex];
   
   return (
-    <div className="space-y-8 font-exam">
-        <div>
-            <h3 className={cn("font-bold", `q-${currentQuestion.id}`)}>Question {currentQuestion.id}</h3>
-            <p className="text-sm mb-4">{currentQuestion.instruction}</p>
+    <Card className="font-exam">
+        <CardHeader>
+            <CardTitle>Question {currentQuestion.id}</CardTitle>
+            <CardDescription>{currentQuestion.instruction}</CardDescription>
+        </CardHeader>
+        <CardContent>
             <QuestionRenderer
               question={currentQuestion}
               answer={answers[currentQuestion.id]}
               onAnswerChange={onAnswerChange}
               isSubmitted={isSubmitted}
             />
-        </div>
-    </div>
+        </CardContent>
+     </Card>
   )
 }
 
@@ -271,7 +289,13 @@ export default function MockTestPage() {
     let calculatedScore = 0;
     for (const q of questions) {
         const userAnswer = answers[q.id];
-        if (JSON.stringify(userAnswer) === JSON.stringify(q.correctAnswer)) {
+        if (q.type === 'multiple-answer') {
+            const userAnswerSorted = [...(userAnswer || [])].sort();
+            const correctAnswerSorted = [...(q.correctAnswer || [])].sort();
+            if (JSON.stringify(userAnswerSorted) === JSON.stringify(correctAnswerSorted)) {
+                calculatedScore++;
+            }
+        } else if (JSON.stringify(userAnswer) === JSON.stringify(q.correctAnswer)) {
             calculatedScore++;
         }
     }
@@ -352,7 +376,7 @@ export default function MockTestPage() {
             <SplitScreenLayout
             leftPanel={<InteractivePassage text={readingTest.passage} />}
             rightPanel={
-                <>
+                <div className="space-y-6">
                     {isSubmitted && <ResultsCard score={score} total={questions.length} />}
                     <QuestionPanel
                         questions={questions}
@@ -361,7 +385,7 @@ export default function MockTestPage() {
                         onAnswerChange={handleAnswerChange}
                         isSubmitted={isSubmitted}
                     />
-                </>
+                </div>
             }
             />
         </ExamShell>
@@ -373,3 +397,5 @@ export default function MockTestPage() {
     </>
   );
 }
+
+    
