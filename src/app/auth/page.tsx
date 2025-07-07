@@ -79,8 +79,25 @@ export default function AuthPage() {
     });
   };
 
+  const checkFirebaseConfig = () => {
+    // onAuthStateChanged will be missing if Firebase isn't configured.
+    if (!auth?.onAuthStateChanged) {
+      toast({
+        variant: 'destructive',
+        title: 'Firebase Not Configured',
+        description: 'Please ensure your Firebase credentials are set up correctly in the .env file.',
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleEmailSignUp: SubmitHandler<FormValues> = async ({ email, password }) => {
     setIsLoading(true);
+    if (!checkFirebaseConfig()) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await createUserDocument(userCredential.user);
@@ -94,6 +111,10 @@ export default function AuthPage() {
 
   const handleEmailLogin: SubmitHandler<FormValues> = async ({ email, password }) => {
     setIsLoading(true);
+    if (!checkFirebaseConfig()) {
+      setIsLoading(false);
+      return;
+    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
       handleAuthSuccess(false);
@@ -106,6 +127,10 @@ export default function AuthPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    if (!checkFirebaseConfig()) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
