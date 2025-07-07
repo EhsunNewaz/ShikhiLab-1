@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -74,20 +75,9 @@ function NavLink({ href, label, icon: Icon, onLinkClick }: { href: string; label
 }
 
 function UserNav() {
-  const { user, loading, logout } = useAuth();
-  const mounted = useMounted();
-
-  if (!mounted || loading) {
-    return <div className="h-10 w-10 rounded-full bg-secondary" />;
-  }
-
-  if (!user) {
-    return (
-      <Button asChild>
-        <Link href="/auth">Login</Link>
-      </Button>
-    );
-  }
+  const { user, logout } = useAuth();
+  
+  if (!user) return null;
 
   return (
     <DropdownMenu>
@@ -231,7 +221,15 @@ export function AppHeader() {
           </nav>
         </div>
         <div className="ml-auto">
-          <UserNav />
+          {(!mounted || loading) ? (
+            <Skeleton className="h-10 w-10 rounded-full" />
+          ) : user ? (
+            <UserNav />
+          ) : (
+            <Button asChild>
+              <Link href="/auth">Login</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
