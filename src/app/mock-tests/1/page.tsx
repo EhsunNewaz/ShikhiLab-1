@@ -18,6 +18,9 @@ import { SubmitConfirmationDialog } from '@/components/exam/submit-confirmation-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // We combine the static question data with a dynamic 'status'
 interface QuestionState extends ReadingQuestionData {
@@ -216,7 +219,6 @@ function QuestionPanel({
 }
 
 export default function MockTestPage() {
-  const [isLocked, setIsLocked] = useState(false);
   const [questions, setQuestions] = useState<QuestionState[]>(initialQuestions);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
@@ -301,7 +303,6 @@ export default function MockTestPage() {
     }
     setScore(calculatedScore);
     setIsSubmitted(true);
-    setIsLocked(true);
     window.localStorage.removeItem(storageKey);
 
     // If user is logged in, save the result to Firestore
@@ -345,7 +346,7 @@ export default function MockTestPage() {
   };
 
   const handleToggleReview = () => {
-    if (isLocked) return;
+    if (isSubmitted) return;
     setQuestions((prev) => {
         const newQuestions = [...prev];
         const currentQuestion = newQuestions[currentQuestionIndex];
@@ -363,29 +364,45 @@ export default function MockTestPage() {
     <>
         <ExamShell
             onTimeUp={handleTimeUp}
-            isLocked={isLocked}
             questions={questions}
             currentQuestionIndex={currentQuestionIndex}
             onSelectQuestion={handleSelectQuestion}
-            onNextQuestion={handleNextQuestion}
-            onPrevQuestion={handlePrevQuestion}
             onToggleReview={handleToggleReview}
             isSubmitted={isSubmitted}
             onSubmit={() => setShowSubmitDialog(true)}
         >
             <SplitScreenLayout
-            leftPanel={<InteractivePassage text={readingTest.passage} />}
-            rightPanel={
-                <div className="space-y-6">
-                    {isSubmitted && <ResultsCard score={score} total={questions.length} />}
-                    <QuestionPanel
-                        questions={questions}
-                        answers={answers}
-                        currentQuestionIndex={currentQuestionIndex}
-                        onAnswerChange={handleAnswerChange}
-                        isSubmitted={isSubmitted}
-                    />
+            leftPanel={
+                <div className="space-y-4">
+                    <h2 className="text-sm font-bold uppercase text-gray-500">Part 1</h2>
+                    <h1 className="text-2xl font-bold text-gray-800">Reading Passage 1</h1>
+                    <p className="text-sm text-gray-600">You should spend about 20 minutes on Questions 1-13, which are based on Reading Passage 1 below.</p>
+                    <InteractivePassage text={readingTest.passage} />
                 </div>
+            }
+            rightPanel={
+              <>
+                <ScrollArea className="h-full">
+                    <div className="space-y-6 p-5 pb-24"> {/* Padding at bottom for floating buttons */}
+                        {isSubmitted && <ResultsCard score={score} total={questions.length} />}
+                        <QuestionPanel
+                            questions={questions}
+                            answers={answers}
+                            currentQuestionIndex={currentQuestionIndex}
+                            onAnswerChange={handleAnswerChange}
+                            isSubmitted={isSubmitted}
+                        />
+                    </div>
+                </ScrollArea>
+                <div className="absolute bottom-5 right-5 flex gap-2">
+                    <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-white border-2 border-exam-green shadow-lg" onClick={handlePrevQuestion} disabled={currentQuestionIndex === 0}>
+                        <ChevronLeft className="h-6 w-6 text-exam-green" />
+                    </Button>
+                    <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-white border-2 border-exam-green shadow-lg" onClick={handleNextQuestion} disabled={currentQuestionIndex === questions.length - 1}>
+                        <ChevronRight className="h-6 w-6 text-exam-green" />
+                    </Button>
+                </div>
+              </>
             }
             />
         </ExamShell>
@@ -397,5 +414,3 @@ export default function MockTestPage() {
     </>
   );
 }
-
-    

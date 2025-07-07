@@ -110,33 +110,6 @@
   body.text-size-xl {
     font-size: 24px;
   }
-
-  /* Exam Timer styles */
-  @keyframes exam-flash-critical {
-    50% {
-      background-color: #ffcccc; /* critical state background */
-      color: #ff0000; /* critical state text */
-    }
-  }
-
-  @keyframes exam-flash-warning {
-    50% {
-      background-color: #ffe6e6; /* warning state background */
-      color: #ff0000; /* warning state text */
-    }
-  }
-
-  .timer.warning {
-    color: #ff0000;
-    background-color: #ffe6e6;
-    animation: exam-flash-warning 1s infinite steps(1, end);
-  }
-
-  .timer.critical {
-    color: #ff0000;
-    background-color: #ffcccc;
-    animation: exam-flash-critical 0.5s infinite steps(1, end);
-  }
 }
 
 @layer base {

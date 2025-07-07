@@ -163,7 +163,7 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
 
   return (
     <div onContextMenu={handleContextMenu}>
-      <div ref={passageRef} className="prose dark:prose-invert max-w-none whitespace-pre-wrap font-body text-base">
+      <div ref={passageRef} className="max-w-none whitespace-pre-wrap font-body text-base leading-relaxed">
         {renderedPassage}
       </div>
       {contextMenu.visible && contextMenuOptions.length > 0 && <ContextMenu x={contextMenu.x} y={contextMenu.y} options={contextMenuOptions} />}

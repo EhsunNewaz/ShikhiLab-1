@@ -18,10 +18,8 @@ export function SplitScreenLayout({ leftPanel, rightPanel }: SplitScreenLayoutPr
       </div>
       
       {/* Right Panel (Questions) */}
-      <div className="h-1/2 w-full bg-[#fafafa] md:h-full md:w-1/2 md:min-w-[400px]">
-         <ScrollArea className="h-full">
-            <div className="p-5">{rightPanel}</div>
-         </ScrollArea>
+      <div className="relative h-1/2 w-full bg-[#fafafa] md:h-full md:w-1/2 md:min-w-[400px]">
+         {rightPanel}
       </div>
     </div>
   );

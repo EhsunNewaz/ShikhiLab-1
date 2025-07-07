@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Check, Volume2 } from 'lucide-react';
+import { Settings, Check, Volume2, FontSize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -72,8 +72,8 @@ export function ExamSettings() {
   }, [mounted]);
 
   const buttonJsx = (
-     <Button style={{ width: '60px', height: '40px' }} className="gap-2 rounded-[4px] bg-exam-green p-0 text-white hover:bg-exam-green-hover disabled:bg-[#cccccc]" disabled={!mounted}>
-        <Settings className="h-5 w-5" />
+     <Button variant="ghost" size="icon" className="text-exam-text hover:bg-gray-200" disabled={!mounted}>
+        <FontSize className="h-5 w-5" />
     </Button>
   );
 

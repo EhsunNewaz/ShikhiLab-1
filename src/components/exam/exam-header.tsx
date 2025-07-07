@@ -4,57 +4,48 @@
 import { ExamTimer } from './exam-timer';
 import { ExamSettings } from './exam-settings';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, EyeOff, FileText, Eye } from 'lucide-react';
+import { HelpCircle, FileText, FileSearch, Send } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 interface ExamHeaderProps {
     onTimeUp: () => void;
     onToggleNotes: () => void;
-    onToggleHide: () => void;
     onToggleHelp: () => void;
-    isContentHidden: boolean;
+    onToggleReview: () => void;
+    onSubmit: () => void;
+    isSubmitted: boolean;
 }
 
-export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHide, onToggleHelp, isContentHidden }: ExamHeaderProps) {
+export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHelp, onToggleReview, onSubmit, isSubmitted }: ExamHeaderProps) {
     return (
-      <header className="fixed top-0 left-0 right-0 z-10 grid h-[60px] grid-cols-3 items-center border-b-2 border-exam-border bg-exam-background px-6 text-exam-text font-exam">
-        {/* Left Side: Instructions Box */}
-        <div className="flex justify-start">
-          <div className="h-[40px] w-[300px] overflow-hidden rounded-4px border border-exam-border-timer bg-white p-2 text-sm text-exam-text shadow-inner">
-            IELTS Reading Test: Instructions for this section will appear here.
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between border-b-2 border-exam-border bg-exam-background px-6 text-exam-text font-exam">
+        {/* Left Side: Logo Placeholder */}
+        <div className="w-48">
+          {/* In a real app, a logo would go here. */}
         </div>
         
         {/* Center: Timer */}
-        <div className="flex justify-center">
-          <ExamTimer initialMinutes={40} onTimeUp={onTimeUp} />
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <ExamTimer initialMinutes={60} onTimeUp={onTimeUp} />
         </div>
 
         {/* Right Side: Controls */}
         <div className="flex items-center justify-end gap-2 text-sm">
-            <Button
-              style={{ width: 'auto', height: '40px' }}
-              className="gap-2 rounded-4px bg-white text-exam-text hover:bg-gray-200"
-              onClick={onToggleNotes}
-            >
+            <Button variant="ghost" size="icon" onClick={onToggleNotes}>
                 <FileText className="h-5 w-5"/>
-                <span>Notes</span>
             </Button>
             <ExamSettings />
-            <Button
-              style={{ width: '50px', height: '40px' }}
-              className="gap-2 rounded-4px bg-exam-blue p-0 text-white hover:bg-exam-blue-hover disabled:bg-[#cccccc]"
-              aria-label="Help"
-              onClick={onToggleHelp}
-            >
+            <Button variant="ghost" size="icon" onClick={onToggleHelp}>
                 <HelpCircle className="h-5 w-5"/>
             </Button>
-            <Button
-              style={{ width: '50px', height: '40px' }}
-              className="gap-2 rounded-4px bg-exam-orange p-0 text-white hover:bg-exam-orange-hover disabled:bg-[#cccccc]"
-              onClick={onToggleHide}
-              aria-label={isContentHidden ? "Show test" : "Hide test"}
-            >
-              {isContentHidden ? <Eye className="h-5 w-5"/> : <EyeOff className="h-5 w-5"/>}
+            <Separator orientation="vertical" className="mx-2 h-6 bg-gray-300" />
+            <Button variant="outline" className="gap-2 rounded-md" onClick={onToggleReview} disabled={isSubmitted}>
+                <FileSearch className="h-5 w-5"/>
+                <span>Review</span>
+            </Button>
+            <Button className="gap-2 rounded-md bg-exam-green text-white hover:bg-exam-green-hover" onClick={onSubmit} disabled={isSubmitted}>
+                <span>Submit</span>
+                <Send className="h-4 w-4"/>
             </Button>
         </div>
       </header>
