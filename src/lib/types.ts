@@ -7,6 +7,7 @@ export interface UserProfile {
   city?: string;
   photoURL?: string;
   ieltsGoalBand?: number;
+  role?: 'student' | 'admin';
   progress?: {
     diagnosticTestScore?: number;
     // other progress fields can go here

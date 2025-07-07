@@ -2,7 +2,7 @@
 
 import { createContext, useState, useEffect, type ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot, type DocumentData } from 'firebase/firestore';
+import { doc, onSnapshot, type DocumentData, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
 
@@ -11,6 +11,21 @@ interface AuthContextType {
   loading: boolean;
   logout: () => void;
 }
+
+// A mock user for development purposes when Firebase is not configured.
+const MOCK_USER: UserProfile = {
+  uid: 'mock-user-fatima',
+  email: 'fatima@example.com',
+  name: 'Fatima Ahmed',
+  city: 'Dhaka',
+  ieltsGoalBand: 7.5,
+  role: 'student',
+  progress: {
+    diagnosticTestScore: 8,
+  },
+  createdAt: serverTimestamp(),
+};
+
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -23,8 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If Firebase isn't configured, don't try to initialize auth listener
+    // If Firebase isn't configured, use a mock user for development.
     if (!auth?.onAuthStateChanged) {
+      console.log("Firebase not configured, using mock user for development.");
+      setUser(MOCK_USER);
       setLoading(false);
       return;
     }
@@ -36,7 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (docSnap.exists()) {
             setUser(docSnap.data() as UserProfile);
           } else {
-            // This might happen briefly on new user creation
             setUser(null);
           }
           setLoading(false);
@@ -52,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = async () => {
-    // Check if auth is initialized before trying to sign out
     if (auth?.signOut) {
       await signOut(auth);
     }
