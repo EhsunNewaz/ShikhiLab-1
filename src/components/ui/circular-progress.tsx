@@ -48,15 +48,6 @@ const CircularProgress = React.forwardRef<
         strokeDashoffset={offset}
         strokeLinecap="round"
       />
-      <text
-        x="50"
-        y="50"
-        textAnchor="middle"
-        dy=".3em"
-        className="transform rotate-90 origin-center text-2xl font-bold fill-foreground font-headline"
-      >
-        {value.toFixed(1)}
-      </text>
     </svg>
   );
 });

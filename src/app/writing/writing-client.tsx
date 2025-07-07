@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { CircularProgress } from '@/components/ui/circular-progress';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,7 +28,10 @@ function FeedbackCategory({ title, score, feedback }: FeedbackCategoryProps) {
   return (
     <Card className="bg-white/50">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium text-primary">{title}</CardTitle>
+         <div className="flex justify-between items-center">
+          <CardTitle className="text-base font-medium text-primary">{title}</CardTitle>
+          <span className="font-bold text-lg text-primary">{score.toFixed(1)}</span>
+        </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">{feedback}</p>
@@ -138,7 +140,6 @@ export default function WritingClient() {
           <p className="text-muted-foreground">Our AI Mentor is analyzing your essay... This may take a moment.</p>
         </div>
       )}
-
 
       {feedback && (
         <Card className="w-full animate-in fade-in-50 duration-500">
