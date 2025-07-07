@@ -26,9 +26,11 @@ export type Module = {
 
 export type ReadingQuestion = {
   id: string;
-  questionText: string;
+  type: 'fill-in-the-blank' | 'multiple-choice' | 'multiple-answer';
+  instruction: string; // "Complete the sentences below.", "Choose the correct letter, A, B, or C."
+  questionText: string; // For fill-in-the-blank, use '___' as placeholder
   options: string[];
-  correctAnswer: string;
+  correctAnswer: any; // Can be string or string[]
   explanation: string;
 };
 
@@ -122,56 +124,91 @@ From China, tea spread to Korea and Japan. It was introduced to Japan by Buddhis
 Tea was introduced to Europe by Portuguese priests and merchants during the 16th century. It became popular in Britain during the 17th century, where the British introduced tea production, as well as tea consumption, to India, in order to compete with the Chinese monopoly on tea. The British appetite for tea was a catalyst for the Opium Wars with China in the 19th century.`,
     questions: [
       {
-        id: 'q1',
-        questionText: 'Where did tea most likely originate?',
-        options: ['Japan', 'India', 'Yunnan, China', 'Britain'],
-        correctAnswer: 'Yunnan, China',
-        explanation: 'The passage states, "Tea likely originated in the Yunnan region during the Shang dynasty as a medicinal drink."',
+        id: '1',
+        type: 'fill-in-the-blank',
+        instruction: 'Complete the sentence below. Write ONE WORD ONLY from the passage.',
+        questionText: 'Tea became a widespread recreational beverage during the ___ dynasty.',
+        options: [],
+        correctAnswer: 'Tang',
+        explanation: 'The passage states, "...it was not until the Tang dynasty that tea became a popular recreational drink..."',
       },
       {
-        id: 'q2',
-        questionText: 'During which dynasty did tea become a popular recreational drink?',
-        options: ['Shang Dynasty', 'Tang Dynasty', 'Ming Dynasty', 'Han Dynasty'],
-        correctAnswer: 'Tang Dynasty',
-        explanation: 'The text says, "It was not until the Tang dynasty that tea became a popular recreational drink..."',
-      },
-      {
-        id: 'q3',
-        questionText: 'Tea was first introduced to Europe by the British.',
-        options: ['True', 'False'],
-        correctAnswer: 'False',
-        explanation: 'The passage mentions, "Tea was introduced to Europe by Portuguese priests and merchants during the 16th century."',
-      },
-      {
-        id: 'q4',
-        questionText: 'Who introduced tea to Japan?',
-        options: ['Portuguese merchants', 'British traders', 'Chinese emperors', 'Buddhist monks'],
+        id: '2',
+        type: 'multiple-choice',
+        instruction: 'Choose the correct letter, A, B, or C.',
+        questionText: 'According to the text, who first brought tea to Japan?',
+        options: ['Portuguese merchants', 'British traders', 'Buddhist monks'],
         correctAnswer: 'Buddhist monks',
-        explanation: 'According to the text, tea "was introduced to Japan by Buddhist monks who had traveled to China to study."',
+        explanation: 'The text says, tea "was introduced to Japan by Buddhist monks who had traveled to China to study."',
       },
       {
-        id: 'q5',
-        questionText: 'The British introduction of tea production in India was to compete with the Chinese tea monopoly.',
-        options: ['True', 'False'],
-        correctAnswer: 'True',
-        explanation: 'The passage clearly states the British introduced tea production in India "in order to compete with the Chinese monopoly on tea."',
+        id: '3',
+        type: 'multiple-answer',
+        instruction: 'Which TWO of the following statements are true according to the passage?',
+        questionText: 'Select two correct options.',
+        options: [
+            'Tea originated in India.', 
+            'The British started tea production to rival China.',
+            'Tea was initially used as medicine.',
+            'The Japanese tea ceremony was developed in China.'
+        ],
+        correctAnswer: ['The British started tea production to rival China.', 'Tea was initially used as medicine.'],
+        explanation: 'The passage confirms tea was a "medicinal drink" and that the British introduced production in India "in order to compete with the Chinese monopoly on tea."',
+      },
+      // Adding a few more to reach a decent number for demo purposes
+      {
+        id: '4',
+        type: 'multiple-choice',
+        instruction: 'Choose the correct letter, A, B, or C.',
+        questionText: 'When did tea become popular in Britain?',
+        options: ['16th Century', '17th Century', '19th Century'],
+        correctAnswer: '17th Century',
+        explanation: 'The passage mentions tea "became popular in Britain during the 17th century..."',
+      },
+      {
+        id: '5',
+        type: 'fill-in-the-blank',
+        instruction: 'Complete the sentence below. Write ONE WORD ONLY from the passage.',
+        questionText: 'The British desire for tea was a factor in the ___ Wars.',
+        options: [],
+        correctAnswer: 'Opium',
+        explanation: 'The text states, "The British appetite for tea was a catalyst for the Opium Wars with China..."',
       },
     ],
   },
 ];
+
+// Re-creating the mock tests to have enough questions for the footer to be meaningful
+const fullTestQuestions: ReadingQuestion[] = Array.from({ length: 40 }, (_, i) => {
+    const questionNumber = i + 1;
+    const baseQuestion = readingTestData[0].questions[i % readingTestData[0].questions.length];
+    return {
+        ...baseQuestion,
+        id: `${questionNumber}`,
+        questionText: `(Q${questionNumber}) ` + baseQuestion.questionText
+    }
+});
+
+readingTestData.push({
+    id: 'full-mock-test-1',
+    title: 'Full Reading Mock Test',
+    passage: readingTestData[0].passage, // reuse passage for simplicity
+    questions: fullTestQuestions
+});
+
 
 export const mockTests: MockTest[] = [
     {
         id: 'mock-1',
         title: 'IELTS Academic Mock Test 1',
         description: 'A full-length mock test simulating the academic IELTS format. Covers all four modules.',
-        href: '/reading/practice/history-of-tea' // Placeholder link
+        href: '/mock-tests/1'
     },
     {
         id: 'mock-2',
         title: 'IELTS General Training Mock Test 1',
         description: 'A full-length mock test for the General Training IELTS format. Covers all four modules.',
-        href: '/reading/practice/history-of-tea' // Placeholder link
+        href: '/mock-tests/1'
     }
 ];
 
