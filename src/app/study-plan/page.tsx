@@ -29,7 +29,9 @@ function ModuleSection({ module }: { module: Module }) {
       <AccordionItem value={module.id} className="border-b-0">
         <AccordionTrigger className="p-6 hover:no-underline">
           <div className="flex items-center gap-4">
-            <Icon className="h-8 w-8 text-primary" />
+            <div className="p-3 bg-primary/10 rounded-lg">
+                <Icon className="h-8 w-8 text-primary" />
+            </div>
             <div>
               <CardTitle className="text-xl text-left">{module.title}</CardTitle>
               <CardDescription className="text-left">{module.description}</CardDescription>

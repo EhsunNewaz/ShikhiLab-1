@@ -23,7 +23,7 @@ export default function FoundationSkillsPage() {
               <Link href={skill.href} key={skill.title}>
                 <Card className="h-full hover:border-primary hover:shadow-lg transition-all duration-300">
                   <CardHeader className="text-center items-center">
-                    <div className="p-4 bg-primary/10 rounded-full mb-3">
+                    <div className="p-4 bg-primary/10 rounded-lg mb-3">
                         <Icon className="h-8 w-8 text-primary" />
                     </div>
                     <CardTitle>{skill.title}</CardTitle>

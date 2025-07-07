@@ -9,7 +9,7 @@ export default function ReadingHubPage() {
   return (
     <div className="container mx-auto py-6 sm:py-10">
       <header className="mb-8 text-center">
-        <div className="inline-block p-4 bg-primary/10 rounded-full mb-3">
+        <div className="inline-block p-4 bg-primary/10 rounded-lg mb-3">
           <BookOpen className="h-10 w-10 text-primary" />
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold font-headline text-primary">Reading Practice</h1>
