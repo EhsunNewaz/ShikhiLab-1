@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth-hook';
@@ -19,6 +20,8 @@ const getModuleLink = (module: Module): string => {
       return '/speaking';
     case 'listening':
       return '/listening';
+    case 'reading':
+      return '/reading';
     // For other modules, default to the first lesson's link.
     default:
       return module.lessons[0]?.href || '#';

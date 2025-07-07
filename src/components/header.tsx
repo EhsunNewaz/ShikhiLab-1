@@ -6,25 +6,48 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { Menu, BookOpenText, MessageSquare, PenSquare, Mic, Headphones, LayoutDashboard, LogOut } from 'lucide-react';
+import { Menu, BookOpenText, MessageSquare, PenSquare, Mic, Headphones, LayoutDashboard, LogOut, ChevronDown, BrainCircuit, ClipboardCheck, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth-hook';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from './ui/dropdown-menu';
 import { useMounted } from '@/hooks/use-mounted';
 
-const navLinks = [
+const mainNavLinks = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/study-plan', label: 'Study Plan' },
+  { href: '/foundation-skills', label: 'Foundation Skills' },
+];
+
+const moduleNavLinks = [
+    { href: '/writing', label: 'Writing', icon: PenSquare },
+    { href: '/speaking', label: 'Speaking', icon: Mic },
+    { href: '/listening', label: 'Listening', icon: Headphones },
+    { href: '/reading', label: 'Reading', icon: BookOpen },
+];
+
+const secondaryNavLinks = [
+    { href: '/mock-tests', label: 'Mock Tests' },
+    { href: '/mentor', label: 'AI Mentor' },
+];
+
+const mobileNavLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/study-plan', label: 'Study Plan', icon: BookOpenText },
+  { href: '/foundation-skills', label: 'Foundation Skills', icon: BrainCircuit },
   { href: '/writing', label: 'Writing', icon: PenSquare },
   { href: '/speaking', label: 'Speaking', icon: Mic },
   { href: '/listening', label: 'Listening', icon: Headphones },
+  { href: '/reading', label: 'Reading', icon: BookOpen },
+  { href: '/mock-tests', label: 'Mock Tests', icon: ClipboardCheck },
   { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
 ];
 
+
 function NavLink({ href, label, icon: Icon, onLinkClick }: { href: string; label: string; icon: React.ElementType; onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const isActive = pathname.startsWith(href);
+  const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+
 
   return (
     <Link href={href} className="w-full" onClick={onLinkClick}>
@@ -84,6 +107,22 @@ function UserNav() {
   );
 }
 
+function DesktopNavLink({ href, label }: { href: string; label: string }) {
+    const pathname = usePathname();
+    const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+    return (
+         <Link
+            href={href}
+            className={cn(
+            'transition-colors hover:text-primary',
+            isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
+            )}
+        >
+            {label}
+        </Link>
+    )
+}
+
 export function AppHeader() {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -115,7 +154,7 @@ export function AppHeader() {
                   </Link>
                   <div className="my-4 h-[calc(100vh-8rem)] overflow-y-auto px-2">
                     <div className="flex flex-col space-y-1">
-                      {navLinks.map(link => (
+                      {mobileNavLinks.map(link => (
                         <NavLink key={link.href} {...link} onLinkClick={() => setIsSheetOpen(false)} />
                       ))}
                     </div>
@@ -136,19 +175,33 @@ export function AppHeader() {
             <span className="font-bold font-headline sm:inline-block">ShikhiLab</span>
           </Link>
           {user && (
-            <nav className="ml-6 hidden items-center space-x-4 text-sm font-medium md:flex">
-              {navLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'transition-colors hover:text-primary',
-                    pathname.startsWith(link.href) ? 'text-primary font-semibold' : 'text-muted-foreground'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
+                {mainNavLinks.map(link => (
+                    <DesktopNavLink key={link.href} {...link} />
+                ))}
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                       <Button variant="ghost" className="px-0 gap-1 text-muted-foreground hover:text-primary focus:text-primary data-[state=open]:text-primary">
+                           IELTS Modules
+                           <ChevronDown className="h-4 w-4" />
+                       </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        {moduleNavLinks.map(link => (
+                            <DropdownMenuItem key={link.href} asChild>
+                                <Link href={link.href}>
+                                    <link.icon className="mr-2 h-4 w-4" />
+                                    {link.label}
+                                </Link>
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                {secondaryNavLinks.map(link => (
+                    <DesktopNavLink key={link.href} {...link} />
+                ))}
             </nav>
           )}
         </div>

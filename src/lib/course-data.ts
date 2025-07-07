@@ -1,5 +1,5 @@
 
-import { BookMarked, Mic, PenSquare, Ear, BookOpen, BookCheck, Repeat } from 'lucide-react';
+import { BookMarked, Mic, PenSquare, Ear, BookOpen, BookCheck, Repeat, ClipboardCheck } from 'lucide-react';
 
 export type Lesson = {
   id: string;
@@ -38,6 +38,14 @@ export type ReadingTest = {
   passage: string;
   questions: ReadingQuestion[];
 };
+
+export type MockTest = {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+};
+
 
 export type GrammarLesson = {
     id: string;
@@ -150,6 +158,21 @@ Tea was introduced to Europe by Portuguese priests and merchants during the 16th
       },
     ],
   },
+];
+
+export const mockTests: MockTest[] = [
+    {
+        id: 'mock-1',
+        title: 'IELTS Academic Mock Test 1',
+        description: 'A full-length mock test simulating the academic IELTS format. Covers all four modules.',
+        href: '/reading/practice/history-of-tea' // Placeholder link
+    },
+    {
+        id: 'mock-2',
+        title: 'IELTS General Training Mock Test 1',
+        description: 'A full-length mock test for the General Training IELTS format. Covers all four modules.',
+        href: '/reading/practice/history-of-tea' // Placeholder link
+    }
 ];
 
 export const courseData: Module[] = [
