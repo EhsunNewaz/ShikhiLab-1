@@ -6,7 +6,10 @@ import { ExamShell } from '@/components/exam/exam-shell';
 import { SplitScreenLayout } from '@/components/exam/split-screen-layout';
 import { InteractivePassage } from '@/components/exam/interactive-passage';
 import { readingTestData } from '@/lib/course-data';
-import { Button } from '@/components/ui/button';
+import { ExamInput } from '@/components/exam/form-elements/exam-input';
+import { ExamRadioGroup, ExamRadioGroupItem } from '@/components/exam/form-elements/exam-radio-group';
+import { ExamCheckbox } from '@/components/exam/form-elements/exam-checkbox';
+
 
 interface QuestionState {
   id: number;
@@ -20,6 +23,59 @@ const initialQuestions: QuestionState[] = Array.from({ length: 40 }, (_, i) => (
 
 // Get the first reading test for demonstration
 const readingTest = readingTestData[0];
+
+// New component to demonstrate form elements
+function QuestionPanel() {
+  const [fillBlank, setFillBlank] = useState('');
+  const [multipleChoice, setMultipleChoice] = useState('');
+  const [checkboxes, setCheckboxes] = useState({ a: false, b: false, c: false });
+
+  const handleCheckboxChange = (key: 'a' | 'b' | 'c') => {
+    setCheckboxes(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <div className="space-y-8 font-exam">
+      <div>
+        <h3 className="font-bold">Questions 1 - 2</h3>
+        <p className="text-sm mb-4">Complete the sentences below.</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span>1. Tea likely originated in the</span>
+            <ExamInput value={fillBlank} onChange={e => setFillBlank(e.target.value)} />
+            <span>region.</span>
+          </div>
+           <div className="flex items-center gap-2">
+            <span>2. Placeholder question for</span>
+            <ExamInput disabled />
+            <span>.</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="font-bold">Question 3</h3>
+        <p className="text-sm mb-4">Choose the correct letter, A, B, or C.</p>
+        <ExamRadioGroup value={multipleChoice} onValueChange={setMultipleChoice} className="space-y-1">
+          <ExamRadioGroupItem value="A" id="q3a" label="During the Shang Dynasty" />
+          <ExamRadioGroupItem value="B" id="q3b" label="During the Tang Dynasty" />
+          <ExamRadioGroupItem value="C" id="q3c" label="During the Ming Dynasty" />
+        </ExamRadioGroup>
+      </div>
+      
+       <div>
+        <h3 className="font-bold">Question 4</h3>
+        <p className="text-sm mb-4">Which TWO of the following are mentioned in the text?</p>
+        <div className="flex flex-col gap-1">
+          <ExamCheckbox checked={checkboxes.a} onCheckedChange={() => handleCheckboxChange('a')} label="The Japanese tea ceremony" />
+          <ExamCheckbox checked={checkboxes.b} onCheckedChange={() => handleCheckboxChange('b')} label="The invention of the tea bag" />
+          <ExamCheckbox checked={checkboxes.c} onCheckedChange={() => handleCheckboxChange('c')} label="The Opium Wars with China" />
+        </div>
+      </div>
+
+    </div>
+  )
+}
 
 export default function MockTestPage() {
   const [isLocked, setIsLocked] = useState(false);
@@ -55,9 +111,9 @@ export default function MockTestPage() {
         const newQuestions = [...prev];
         const currentQuestion = newQuestions[currentQuestionIndex];
         
-        // A more advanced version might remember the pre-review state.
-        // For now, we revert to unanswered.
         if (currentQuestion.status === 'reviewed') {
+          // A more advanced version might remember the pre-review state.
+          // For now, we revert to unanswered.
           currentQuestion.status = 'unanswered'; 
         } else {
           currentQuestion.status = 'reviewed';
@@ -66,39 +122,6 @@ export default function MockTestPage() {
       });
     }
   };
-
-  // Helper to demonstrate answering a question, which updates the grid
-  const handleAnswerCurrentQuestion = () => {
-    if (questions[currentQuestionIndex].status === 'unanswered') {
-      setQuestions((prev) => {
-        const newQuestions = [...prev];
-        newQuestions[currentQuestionIndex].status = 'answered';
-        return newQuestions;
-      });
-    }
-  };
-
-  // Placeholder for the right panel content
-  const RightPanelContent = () => (
-    <div>
-      <h2 className="mb-4 text-xl font-bold">Questions {currentQuestionIndex + 1} - {currentQuestionIndex + 5}</h2>
-      <p className="mb-4">Choose the correct letter, A, B, C or D.</p>
-      <div className="space-y-6">
-        <div className="space-y-2">
-            <p className="font-semibold">{currentQuestionIndex + 1}. This is a placeholder for the first question based on the passage.</p>
-            {/* Options would be rendered here */}
-        </div>
-        <div className="h-24 w-full animate-pulse rounded-lg bg-gray-100"></div>
-        <div className="h-24 w-3/4 animate-pulse rounded-lg bg-gray-100"></div>
-        <div className="h-24 w-full animate-pulse rounded-lg bg-gray-100"></div>
-      </div>
-      <div className="mt-8">
-        <Button onClick={handleAnswerCurrentQuestion} disabled={isLocked} className="bg-exam-blue text-white hover:bg-exam-blue/90 rounded-sm">
-          Mark as Answered (Demo)
-        </Button>
-      </div>
-    </div>
-  );
 
   return (
     <ExamShell
@@ -109,11 +132,11 @@ export default function MockTestPage() {
       onSelectQuestion={handleSelectQuestion}
       onNextQuestion={handleNextQuestion}
       onPrevQuestion={handlePrevQuestion}
-      onToggleReview={handleToggleReview}
+      onToggleReview={onToggleReview}
     >
       <SplitScreenLayout
         leftPanel={<InteractivePassage text={readingTest.passage} />}
-        rightPanel={<RightPanelContent />}
+        rightPanel={<QuestionPanel />}
       />
     </ExamShell>
   );
