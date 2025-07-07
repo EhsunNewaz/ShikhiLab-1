@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { getListeningFeedback, type GetListeningFeedbackOutput } from '@/ai/flows/get-listening-feedback';
 import type { ActiveListeningExercise } from '@/lib/course-data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,8 +84,6 @@ export function ActiveListeningTrainer({ exercises }: { exercises: ActiveListeni
         setUserInput('');
         setFeedback(null);
     }
-    
-    const isSubmitted = feedback !== null;
 
     return (
         <Card>
@@ -109,18 +108,18 @@ export function ActiveListeningTrainer({ exercises }: { exercises: ActiveListeni
                     placeholder="Type what you heard here..."
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
-                    disabled={isLoading || isSubmitted}
+                    disabled={isLoading || !!feedback}
                     rows={4}
                 />
                 
-                {!isSubmitted && (
+                {!feedback && (
                     <Button onClick={handleCheckAnswer} disabled={isLoading}>
                          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Check My Answer
                     </Button>
                 )}
 
-                {isSubmitted && (
+                {feedback && (
                     <div className="space-y-4 animate-in fade-in-50">
                         <Card className={cn("border-2", feedback.isCorrect ? "border-green-500 bg-green-50" : "border-destructive bg-red-50")}>
                             <CardHeader>
