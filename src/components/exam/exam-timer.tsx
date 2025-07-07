@@ -33,7 +33,7 @@ export function ExamTimer({ initialMinutes = 40, onTimeUp }: TimerProps) {
   const seconds = timeLeft % 60;
 
   const timerClasses = cn(
-    'timer text-lg font-bold px-4 py-1 rounded-md',
+    'timer text-lg font-bold px-4 py-2 rounded-sm border border-gray-300 bg-white',
     {
       'warning': timeLeft <= 600 && timeLeft > 300, // 10 minutes
       'critical': timeLeft <= 300 && timeLeft > 0, // 5 minutes

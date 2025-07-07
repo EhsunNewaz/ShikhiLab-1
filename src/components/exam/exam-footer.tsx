@@ -3,6 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, ChevronsRight, Flag } from 'lucide-react';
 
 interface QuestionState {
   id: number;
@@ -27,21 +28,24 @@ export function ExamFooter({
   onToggleReview,
 }: ExamFooterProps) {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between border-t border-gray-300 bg-[#f5f5f5] px-6 text-gray-800">
+    <footer className="fixed bottom-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between border-t-2 border-exam-border-light bg-[#e8e8e8] px-6 text-exam-text">
       {/* Left Side: Review Button */}
-      <Button variant="outline" className="border-gray-400 bg-white" onClick={onToggleReview}>
+      <Button
+        className="h-10 w-24 rounded-sm border-none bg-exam-orange text-white hover:bg-exam-orange/90"
+        onClick={onToggleReview}
+      >
+        <Flag className="mr-2" />
         Review
       </Button>
 
       {/* Center: Navigation */}
       <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
         <Button
-          variant="outline"
-          className="border-gray-400 bg-white"
+          className="h-10 w-20 rounded-sm border-none bg-exam-blue text-white hover:bg-exam-blue/90 disabled:bg-[#cccccc] disabled:opacity-100"
           onClick={onPrevQuestion}
           disabled={currentQuestionIndex === 0}
         >
-          ← Back
+          <ChevronLeft /> Back
         </Button>
 
         {/* Question Numbers Grid */}
@@ -51,11 +55,17 @@ export function ExamFooter({
             const isReviewed = q.status === 'reviewed';
 
             const buttonClasses = cn(
-              'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-gray-300 text-xs transition-colors hover:bg-gray-200',
+              'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center text-xs font-bold transition-colors hover:bg-gray-200',
               {
-                'bg-gray-800 text-white font-bold hover:bg-gray-700': isCurrent,
-                'bg-gray-200': q.status === 'answered' && !isCurrent,
-                'rounded-full border-2 border-gray-800 font-bold': isReviewed,
+                // Shape
+                'rounded-sm border': !isReviewed,
+                'rounded-full': isReviewed,
+                // Unanswered
+                'bg-white border-gray-300 text-black': q.status === 'unanswered',
+                 // Answered
+                'bg-exam-green border-exam-green text-white': q.status === 'answered',
+                 // Current
+                'bg-exam-yellow border-2 border-exam-orange text-black': isCurrent,
               }
             );
 
@@ -68,17 +78,16 @@ export function ExamFooter({
         </div>
 
         <Button
-          variant="outline"
-          className="border-gray-400 bg-white"
+          className="h-10 w-20 rounded-sm border-none bg-exam-blue text-white hover:bg-exam-blue/90 disabled:bg-[#cccccc] disabled:opacity-100"
           onClick={onNextQuestion}
           disabled={currentQuestionIndex === questions.length - 1}
         >
-          Next →
+          Next <ChevronRight />
         </Button>
       </div>
 
       {/* Right Side: Minimize Placeholder */}
-      <Button variant="outline" className="border-gray-400 bg-white">
+      <Button variant="outline" className="h-10 w-24 rounded-sm border-gray-400 bg-white">
         ▼ Minimize
       </Button>
     </footer>

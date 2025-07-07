@@ -20,6 +20,7 @@ export default {
         body: ['PT Sans', 'sans-serif'],
         headline: ['PT Sans', 'sans-serif'],
         code: ['monospace'],
+        exam: ['Arial', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -55,6 +56,16 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        // Exam specific colors
+        'exam-background': '#f5f5f5',
+        'exam-border': '#e0e0e0',
+        'exam-border-light': '#cccccc',
+        'exam-text': '#333333',
+        'exam-green': '#4CAF50',
+        'exam-blue': '#2196F3',
+        'exam-orange': '#FF9800',
+        'exam-yellow': '#FFC107',
+        'exam-highlight': '#ffff00',
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',

@@ -53,8 +53,6 @@ export function ExamSettings() {
     const textSizeClass = textSizeOptions.find(t => t.value === textSize)?.class;
     if (textSizeClass) body.classList.add(textSizeClass);
 
-    console.log(`Applied theme - Contrast: ${contrast}, Text Size: ${textSize}`);
-
   }, [contrast, textSize, mounted]);
 
   // Cleanup effect to remove classes when component unmounts
@@ -72,22 +70,21 @@ export function ExamSettings() {
     };
   }, [mounted]);
 
+  const buttonJsx = (
+     <Button variant="ghost" size="sm" className="h-10 gap-2 rounded-sm bg-exam-green text-white hover:bg-exam-green/90" disabled={!mounted}>
+        <Settings className="h-5 w-5" />
+        <span>Settings</span>
+    </Button>
+  );
+
   if (!mounted) {
-    return (
-        <Button variant="ghost" size="sm" className="gap-2 text-gray-800" disabled>
-          <Settings className="h-5 w-5" />
-          <span>Settings</span>
-        </Button>
-    )
+    return buttonJsx;
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 text-gray-800 hover:bg-gray-200">
-          <Settings className="h-5 w-5" />
-          <span>Settings</span>
-        </Button>
+        {buttonJsx}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-white">
         <DropdownMenuLabel>Colour contrast</DropdownMenuLabel>

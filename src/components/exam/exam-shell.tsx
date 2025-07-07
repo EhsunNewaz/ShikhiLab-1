@@ -120,7 +120,7 @@ export function ExamShell({
 
   return (
     <div
-      className={cn('h-screen w-screen bg-[#f5f5f5] font-sans text-gray-800', {
+      className={cn('h-screen w-screen bg-exam-background font-exam text-exam-text', {
         'pointer-events-none opacity-75': isLocked,
       })}
     >
