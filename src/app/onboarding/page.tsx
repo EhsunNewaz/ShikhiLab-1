@@ -45,8 +45,12 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth');
+    if (!loading) {
+      if (!user) {
+        router.push('/auth');
+      } else if (user.name && user.city && user.ieltsGoalBand && user.progress?.diagnosticTestScore !== undefined) {
+        router.push('/dashboard');
+      }
     }
   }, [user, loading, router]);
   

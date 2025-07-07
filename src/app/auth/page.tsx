@@ -10,6 +10,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  getAdditionalUserInfo,
   type User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -108,7 +109,7 @@ export default function AuthPage() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const isNewUser = result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
       if (isNewUser) {
         await createUserDocument(result.user);
       }
