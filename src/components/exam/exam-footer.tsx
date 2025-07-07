@@ -52,7 +52,7 @@ export function ExamFooter({
       {/* Left Side: Review Button */}
       <Button
         style={{ width: '80px', height: '40px' }}
-        className="rounded-[4px] border-none bg-exam-orange text-white hover:bg-exam-orange/90"
+        className="rounded-[4px] border-none bg-exam-orange text-white hover:bg-exam-orange-hover"
         onClick={onToggleReview}
       >
         <Flag className="mr-2" />
@@ -63,7 +63,7 @@ export function ExamFooter({
       <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
         <Button
           style={{ width: '50px', height: '40px' }}
-          className="rounded-[4px] border-none bg-exam-blue p-0 text-white hover:bg-exam-blue/90 disabled:bg-[#cccccc] disabled:opacity-100"
+          className="rounded-[4px] border-none bg-exam-blue p-0 text-white hover:bg-exam-blue-hover disabled:bg-[#cccccc] disabled:opacity-100"
           onClick={onPrevQuestion}
           disabled={currentQuestionIndex === 0}
         >
@@ -99,7 +99,7 @@ export function ExamFooter({
 
         <Button
           style={{ width: '50px', height: '40px' }}
-          className="rounded-[4px] border-none bg-exam-blue p-0 text-white hover:bg-exam-blue/90 disabled:bg-[#cccccc] disabled:opacity-100"
+          className="rounded-[4px] border-none bg-exam-blue p-0 text-white hover:bg-exam-blue-hover disabled:bg-[#cccccc] disabled:opacity-100"
           onClick={onNextQuestion}
           disabled={currentQuestionIndex === questions.length - 1}
         >
