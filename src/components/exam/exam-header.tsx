@@ -10,10 +10,11 @@ interface ExamHeaderProps {
     onTimeUp: () => void;
     onToggleNotes: () => void;
     onToggleHide: () => void;
+    onToggleHelp: () => void;
     isContentHidden: boolean;
 }
 
-export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHide, isContentHidden }: ExamHeaderProps) {
+export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHide, onToggleHelp, isContentHidden }: ExamHeaderProps) {
     return (
       <header className="fixed top-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between border-b-2 border-exam-border bg-exam-background px-6 text-exam-text font-exam">
         {/* Left Side: Instructions Box */}
@@ -43,6 +44,7 @@ export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHide, isContentHid
               style={{ width: '50px', height: '40px' }}
               className="gap-2 rounded-4px bg-exam-blue p-0 text-white hover:bg-exam-blue-hover disabled:bg-[#cccccc]"
               aria-label="Help"
+              onClick={onToggleHelp}
             >
                 <HelpCircle className="h-5 w-5"/>
             </Button>

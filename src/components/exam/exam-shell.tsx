@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -7,11 +8,10 @@ import { ExamFooter } from './exam-footer';
 import { cn } from '@/lib/utils';
 import { NotesPanel } from './notes-panel';
 import { InactivityWarningDialog } from './inactivity-warning-dialog';
-import { Button } from '../ui/button';
-import { Eye } from 'lucide-react';
+import { HelpDialog } from './help-dialog';
 
 interface QuestionState {
-  id: number;
+  id: string;
   status: 'unanswered' | 'answered' | 'reviewed';
 }
 
@@ -39,6 +39,7 @@ export function ExamShell({
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [isContentHidden, setIsContentHidden] = useState(false);
   const [isFooterMinimized, setIsFooterMinimized] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -53,8 +54,6 @@ export function ExamShell({
 
   useEffect(() => {
     // --- Start Fullscreen ---
-    // Best practice is to trigger this on a user action like a "Start Test" button.
-    // For this step, we'll trigger it on mount.
     const requestFullscreen = async () => {
       try {
         if (document.documentElement.requestFullscreen) {
@@ -64,17 +63,15 @@ export function ExamShell({
         console.error("Fullscreen request failed:", err);
       }
     };
-    requestFullscreen();
+    // Best practice to trigger on user action, but for demo we do it on mount.
+    // requestFullscreen();
 
     // --- Disable Browser Functions ---
     const handleContextMenu = (e: MouseEvent) => {
-        // Prevent default right-click menu globally within the exam shell.
-        // The InteractivePassage component will provide its own custom menu.
         e.preventDefault();
     };
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Block F12 (dev tools) and ctrl+c/v/x (copy/paste/cut)
       if (e.key === 'F12' || (e.ctrlKey && ['c', 'v', 'x'].includes(e.key))) {
         e.preventDefault();
       }
@@ -109,7 +106,6 @@ export function ExamShell({
         clearTimeout(inactivityTimer.current);
       }
       
-      // Exit fullscreen when component unmounts
       if (document.fullscreenElement) {
         document.exitFullscreen();
       }
@@ -131,6 +127,7 @@ export function ExamShell({
         onTimeUp={onTimeUp}
         onToggleNotes={() => setIsNotesPanelOpen(p => !p)}
         onToggleHide={() => setIsContentHidden(p => !p)}
+        onToggleHelp={() => setIsHelpOpen(true)}
         isContentHidden={isContentHidden}
       />
 
@@ -149,7 +146,7 @@ export function ExamShell({
         <div className="flex h-full items-center justify-center bg-white pt-[60px] pb-[60px]">
             <div className="text-center space-y-4">
                 <h2 className="text-3xl font-bold text-exam-text">Test is Hidden</h2>
-                <p className="text-muted-foreground">Click "Show" in the header to resume your test.</p>
+                <p className="text-muted-foreground">Click the "Show" button in the header to resume your test.</p>
             </div>
         </div>
       )}
@@ -164,6 +161,7 @@ export function ExamShell({
       {/* Popups and Overlays */}
       <NotesPanel isOpen={isNotesPanelOpen} onClose={() => setIsNotesPanelOpen(false)} />
       <InactivityWarningDialog isOpen={showInactivityModal} onContinue={handleContinue} />
+      <HelpDialog isOpen={isHelpOpen} onOpenChange={setIsHelpOpen} />
     </div>
   );
 }
