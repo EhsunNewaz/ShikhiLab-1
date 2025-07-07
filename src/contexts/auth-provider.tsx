@@ -23,6 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If Firebase isn't configured, don't try to initialize auth listener
+    if (!auth?.onAuthStateChanged) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
       if (firebaseUser) {
         const userRef = doc(db, 'users', firebaseUser.uid);
@@ -46,7 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = async () => {
-    await signOut(auth);
+    // Check if auth is initialized before trying to sign out
+    if (auth?.signOut) {
+      await signOut(auth);
+    }
   };
 
   const value = { user, loading, logout };
