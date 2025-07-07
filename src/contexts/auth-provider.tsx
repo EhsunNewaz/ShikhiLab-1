@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useState, useEffect, type ReactNode } from 'react';
@@ -5,10 +6,12 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { doc, onSnapshot, type DocumentData, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
+  login: () => void; // For mock mode
   logout: () => void;
 }
 
@@ -30,18 +33,23 @@ const MOCK_USER: UserProfile = {
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  login: () => {},
   logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    // If Firebase isn't configured, use a mock user for development.
+    // If Firebase isn't configured, we check session storage for mock user.
     if (!auth?.onAuthStateChanged) {
       console.log("Firebase not configured, using mock user for development.");
-      setUser(MOCK_USER);
+      const mockUserSession = sessionStorage.getItem('mockUser');
+      if (mockUserSession) {
+          setUser(JSON.parse(mockUserSession));
+      }
       setLoading(false);
       return;
     }
@@ -67,19 +75,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const logout = async () => {
-    // If Firebase isn't configured, just clear the mock user state
+  const login = () => {
     if (!auth?.onAuthStateChanged) {
+        sessionStorage.setItem('mockUser', JSON.stringify(MOCK_USER));
+        setUser(MOCK_USER);
+    }
+  }
+
+  const logout = async () => {
+    if (!auth?.onAuthStateChanged) {
+        sessionStorage.removeItem('mockUser');
         setUser(null);
+        router.push('/auth');
         return;
     }
-    // Otherwise, sign out from Firebase
     if (auth?.signOut) {
       await signOut(auth);
+      router.push('/auth');
     }
   };
 
-  const value = { user, loading, logout };
+  const value = { user, loading, login, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -21,6 +21,7 @@ import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth-hook';
 import { useToast } from '@/hooks/use-toast';
 import {
   Card,
@@ -57,6 +58,7 @@ async function createUserDocument(user: User) {
 export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { login: mockLogin, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isMockMode, setIsMockMode] = useState(false);
 
@@ -69,6 +71,12 @@ export default function AuthPage() {
       });
     }
   }, [toast]);
+  
+  useEffect(() => {
+      if (user) {
+          router.push('/dashboard');
+      }
+  }, [user, router]);
 
   const {
     register,
@@ -135,7 +143,7 @@ export default function AuthPage() {
   
   const handleMockAuth = () => {
     setIsLoading(true);
-    router.push('/dashboard');
+    mockLogin();
   };
 
   const handleMockFormSubmit = (e: React.FormEvent) => {

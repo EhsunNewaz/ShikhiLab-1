@@ -11,6 +11,7 @@ import { CheckCircle, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMounted } from '@/hooks/use-mounted';
 import { courseData, getNextLesson, type Module } from '@/lib/course-data';
+import { useEffect } from 'react';
 
 const getModuleLink = (module: Module): string => {
   switch (module.id) {
@@ -32,6 +33,12 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const mounted = useMounted();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth');
+    }
+  }, [user, loading, router]);
 
   if (!mounted || loading || !user) {
     return <DashboardSkeleton />;
