@@ -8,6 +8,8 @@ import { ExamFooter } from './exam-footer';
 import { cn } from '@/lib/utils';
 import { NotesPanel } from './notes-panel';
 import { InactivityWarningDialog } from './inactivity-warning-dialog';
+import { Button } from '../ui/button';
+import { Eye } from 'lucide-react';
 
 interface QuestionState {
   id: number;
@@ -36,6 +38,8 @@ export function ExamShell({
 }: ExamShellProps) {
   const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
+  const [isContentHidden, setIsContentHidden] = useState(false);
+  const [isFooterMinimized, setIsFooterMinimized] = useState(false);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -124,15 +128,39 @@ export function ExamShell({
         'pointer-events-none opacity-75': isLocked,
       })}
     >
-      <ExamHeader onTimeUp={onTimeUp} onToggleNotes={() => setIsNotesPanelOpen(p => !p)} />
+      <ExamHeader
+        onTimeUp={onTimeUp}
+        onToggleNotes={() => setIsNotesPanelOpen(p => !p)}
+        onToggleHide={() => setIsContentHidden(p => !p)}
+        isContentHidden={isContentHidden}
+      />
 
       {/* Main Content Area */}
-      <main className="h-full overflow-y-auto bg-white pt-[60px] pb-[60px]">
+      <main
+        className={cn("h-full bg-white pt-[60px]", {
+            "pb-[60px]": !isFooterMinimized,
+            "pb-[30px]": isFooterMinimized,
+            "hidden": isContentHidden,
+        })}
+      >
         {children}
       </main>
+      
+      {isContentHidden && (
+        <div className="flex h-full items-center justify-center bg-white pt-[60px] pb-[60px]">
+            <div className="text-center space-y-4">
+                <h2 className="text-3xl font-bold text-exam-text">Test is Hidden</h2>
+                <p className="text-muted-foreground">Click "Show" in the header to resume your test.</p>
+            </div>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
-      <ExamFooter {...footerProps} />
+      <ExamFooter
+        {...footerProps}
+        isMinimized={isFooterMinimized}
+        onToggleMinimize={() => setIsFooterMinimized(p => !p)}
+      />
 
       {/* Popups and Overlays */}
       <NotesPanel isOpen={isNotesPanelOpen} onClose={() => setIsNotesPanelOpen(false)} />

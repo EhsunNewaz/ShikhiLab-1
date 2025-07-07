@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, ChevronsRight, Flag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flag, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface QuestionState {
   id: number;
@@ -17,6 +17,8 @@ interface ExamFooterProps {
   onNextQuestion: () => void;
   onPrevQuestion: () => void;
   onToggleReview: () => void;
+  isMinimized: boolean;
+  onToggleMinimize: () => void;
 }
 
 export function ExamFooter({
@@ -26,7 +28,24 @@ export function ExamFooter({
   onNextQuestion,
   onPrevQuestion,
   onToggleReview,
+  isMinimized,
+  onToggleMinimize,
 }: ExamFooterProps) {
+
+  if (isMinimized) {
+    return (
+       <footer className="fixed bottom-0 left-0 right-0 z-10 flex h-[30px] items-center justify-end border-t-2 border-exam-border-light bg-[#e8e8e8] px-6">
+        <Button
+          className="h-full w-28 rounded-sm border-none bg-exam-yellow text-black hover:bg-exam-yellow/90"
+          onClick={onToggleMinimize}
+        >
+          <ArrowUp className="mr-2" />
+          Show
+        </Button>
+      </footer>
+    )
+  }
+
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between border-t-2 border-exam-border-light bg-[#e8e8e8] px-6 text-exam-text">
       {/* Left Side: Review Button */}
@@ -87,8 +106,13 @@ export function ExamFooter({
       </div>
 
       {/* Right Side: Minimize Placeholder */}
-      <Button variant="outline" className="h-10 w-24 rounded-sm border-gray-400 bg-white">
-        ▼ Minimize
+      <Button
+        variant="outline"
+        className="h-10 w-24 rounded-sm border-gray-400 bg-exam-yellow text-black hover:bg-exam-yellow/90"
+        onClick={onToggleMinimize}
+      >
+        <ArrowDown className="mr-2" />
+        Minimize
       </Button>
     </footer>
   );

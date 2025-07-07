@@ -3,6 +3,10 @@
 
 import { useState } from 'react';
 import { ExamShell } from '@/components/exam/exam-shell';
+import { SplitScreenLayout } from '@/components/exam/split-screen-layout';
+import { InteractivePassage } from '@/components/exam/interactive-passage';
+import { readingTestData } from '@/lib/course-data';
+import { Button } from '@/components/ui/button';
 
 interface QuestionState {
   id: number;
@@ -13,6 +17,9 @@ const initialQuestions: QuestionState[] = Array.from({ length: 40 }, (_, i) => (
   id: i + 1,
   status: 'unanswered',
 }));
+
+// Get the first reading test for demonstration
+const readingTest = readingTestData[0];
 
 export default function MockTestPage() {
   const [isLocked, setIsLocked] = useState(false);
@@ -48,7 +55,8 @@ export default function MockTestPage() {
         const newQuestions = [...prev];
         const currentQuestion = newQuestions[currentQuestionIndex];
         
-        // This is a simple toggle. A more advanced version might remember the pre-review state.
+        // A more advanced version might remember the pre-review state.
+        // For now, we revert to unanswered.
         if (currentQuestion.status === 'reviewed') {
           currentQuestion.status = 'unanswered'; 
         } else {
@@ -70,6 +78,28 @@ export default function MockTestPage() {
     }
   };
 
+  // Placeholder for the right panel content
+  const RightPanelContent = () => (
+    <div>
+      <h2 className="mb-4 text-xl font-bold">Questions {currentQuestionIndex + 1} - {currentQuestionIndex + 5}</h2>
+      <p className="mb-4">Choose the correct letter, A, B, C or D.</p>
+      <div className="space-y-6">
+        <div className="space-y-2">
+            <p className="font-semibold">{currentQuestionIndex + 1}. This is a placeholder for the first question based on the passage.</p>
+            {/* Options would be rendered here */}
+        </div>
+        <div className="h-24 w-full animate-pulse rounded-lg bg-gray-100"></div>
+        <div className="h-24 w-3/4 animate-pulse rounded-lg bg-gray-100"></div>
+        <div className="h-24 w-full animate-pulse rounded-lg bg-gray-100"></div>
+      </div>
+      <div className="mt-8">
+        <Button onClick={handleAnswerCurrentQuestion} disabled={isLocked} className="bg-exam-blue text-white hover:bg-exam-blue/90 rounded-sm">
+          Mark as Answered (Demo)
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <ExamShell
       onTimeUp={handleTimeUp}
@@ -81,20 +111,10 @@ export default function MockTestPage() {
       onPrevQuestion={handlePrevQuestion}
       onToggleReview={handleToggleReview}
     >
-      <div className="p-8">
-        <h1 className="mb-4 text-2xl font-bold">IELTS Mock Test - Question {currentQuestionIndex + 1}</h1>
-        <p>This is the main content area where the test passage and questions will be rendered.</p>
-        <div className="mt-6 space-y-4">
-          <div className="h-24 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"></div>
-          <div className="h-24 w-3/4 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"></div>
-          <div className="h-24 w-full animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"></div>
-        </div>
-        <div className="mt-8">
-          <Button onClick={handleAnswerCurrentQuestion} disabled={isLocked}>
-            Mark as Answered (Demo)
-          </Button>
-        </div>
-      </div>
+      <SplitScreenLayout
+        leftPanel={<InteractivePassage text={readingTest.passage} />}
+        rightPanel={<RightPanelContent />}
+      />
     </ExamShell>
   );
 }
