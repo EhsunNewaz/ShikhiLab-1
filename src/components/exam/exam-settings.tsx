@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Check, Volume2, FontSize } from 'lucide-react';
+import { Check, Volume2, ALargeSmall } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -73,7 +72,7 @@ export function ExamSettings() {
 
   const buttonJsx = (
      <Button variant="ghost" size="icon" className="text-exam-text hover:bg-gray-200" disabled={!mounted}>
-        <FontSize className="h-5 w-5" />
+        <ALargeSmall className="h-5 w-5" />
     </Button>
   );
 
