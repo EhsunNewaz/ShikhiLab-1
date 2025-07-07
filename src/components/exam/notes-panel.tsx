@@ -21,12 +21,12 @@ export function NotesPanel({ isOpen, onClose }: NotesPanelProps) {
   }
 
   return (
-    <Draggable handle=".handle" nodeRef={nodeRef}>
+    <Draggable handle=".handle" nodeRef={nodeRef} cancel=".notes-close-button">
         <div ref={nodeRef} className="fixed z-20 w-[300px]">
             <Card className="h-[400px] flex flex-col bg-[#fffacd] border-gray-400 shadow-2xl">
                 <CardHeader className="handle flex flex-row items-center justify-between p-3 bg-gray-200/50 cursor-move">
                     <CardTitle className="text-base font-semibold text-gray-800">Notes</CardTitle>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 notes-close-button" onClick={onClose}>
                         <X className="h-4 w-4" />
                     </Button>
                 </CardHeader>
