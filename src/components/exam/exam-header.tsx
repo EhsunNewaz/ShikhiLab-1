@@ -41,13 +41,13 @@ export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHide, isContentHid
             <ExamSettings />
             <Button
               style={{ width: '50px', height: '40px' }}
-              className="gap-2 rounded-[4px] bg-exam-blue p-0 text-white hover:bg-exam-blue/90"
+              className="gap-2 rounded-[4px] bg-exam-blue p-0 text-white hover:bg-exam-blue-hover disabled:bg-[#cccccc]"
             >
                 <HelpCircle className="h-5 w-5"/>
             </Button>
             <Button
               style={{ width: '50px', height: '40px' }}
-              className="gap-2 rounded-[4px] bg-exam-orange p-0 text-white hover:bg-exam-orange/90"
+              className="gap-2 rounded-[4px] bg-exam-orange p-0 text-white hover:bg-exam-orange-hover disabled:bg-[#cccccc]"
               onClick={onToggleHide}
             >
               {isContentHidden ? <Eye className="h-5 w-5"/> : <EyeOff className="h-5 w-5"/>}

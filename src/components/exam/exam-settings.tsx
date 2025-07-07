@@ -72,7 +72,7 @@ export function ExamSettings() {
   }, [mounted]);
 
   const buttonJsx = (
-     <Button style={{ width: '60px', height: '40px' }} className="gap-2 rounded-[4px] bg-exam-green p-0 text-white hover:bg-exam-green/90" disabled={!mounted}>
+     <Button style={{ width: '60px', height: '40px' }} className="gap-2 rounded-[4px] bg-exam-green p-0 text-white hover:bg-exam-green-hover disabled:bg-[#cccccc]" disabled={!mounted}>
         <Settings className="h-5 w-5" />
     </Button>
   );
