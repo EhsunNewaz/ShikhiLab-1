@@ -120,8 +120,31 @@ function QuestionPanel({
 export default function MockTestPage() {
   const [isLocked, setIsLocked] = useState(false);
   const [questions, setQuestions] = useState<QuestionState[]>(initialQuestions);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  
+  const storageKey = `answers_${readingTest.id}`;
+  const [answers, setAnswers] = useState<Record<string, any>>(() => {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+    try {
+      const savedAnswers = window.localStorage.getItem(storageKey);
+      return savedAnswers ? JSON.parse(savedAnswers) : {};
+    } catch (error) {
+      console.error("Error reading from localStorage", error);
+      return {};
+    }
+  });
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // Effect to save answers to localStorage whenever they change
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(answers));
+    } catch (error) {
+      console.error("Error writing to localStorage", error);
+    }
+  }, [answers, storageKey]);
 
   // Effect to update question status when an answer changes
   useEffect(() => {
@@ -136,6 +159,10 @@ export default function MockTestPage() {
       prevQuestions.map(q => {
         if (answeredQuestionIds.includes(q.id) && q.status === 'unanswered') {
           return { ...q, status: 'answered' };
+        }
+        // This handles cases where an answer is deleted
+        if (!answeredQuestionIds.includes(q.id) && q.status === 'answered') {
+            return { ...q, status: 'unanswered' };
         }
         return q;
       })
