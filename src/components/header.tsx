@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -16,9 +17,9 @@ const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/study-plan', label: 'Study Plan', icon: BookOpenText },
   { href: '/writing', label: 'Writing', icon: PenSquare },
-  { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
   { href: '/speaking', label: 'Speaking', icon: Mic },
   { href: '/listening', label: 'Listening', icon: Headphones },
+  { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
 ];
 
 function NavLink({ href, label, icon: Icon, onLinkClick }: { href: string; label: string; icon: React.ElementType; onLinkClick?: () => void }) {
@@ -135,8 +136,8 @@ export function AppHeader() {
             <span className="font-bold font-headline sm:inline-block">ShikhiLab</span>
           </Link>
           {user && (
-            <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
-              {navLinks.slice(0, 4).map(link => (
+            <nav className="ml-6 hidden items-center space-x-4 text-sm font-medium md:flex">
+              {navLinks.map(link => (
                 <Link
                   key={link.href}
                   href={link.href}
