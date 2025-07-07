@@ -131,6 +131,11 @@ export function AppHeader() {
   
   const isPublicPage = !user && pathname === '/';
 
+  // Do not render the header for the mock test pages, as they have their own shell.
+  if (pathname.startsWith('/mock-tests/')) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
