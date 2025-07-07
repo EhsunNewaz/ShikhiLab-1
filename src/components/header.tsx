@@ -14,6 +14,7 @@ import { useMounted } from '@/hooks/use-mounted';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/study-plan', label: 'Study Plan', icon: BookOpenText },
   { href: '/writing', label: 'Writing', icon: PenSquare },
   { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
   { href: '/speaking', label: 'Speaking', icon: Mic },
@@ -22,7 +23,7 @@ const navLinks = [
 
 function NavLink({ href, label, icon: Icon, onLinkClick }: { href: string; label: string; icon: React.ElementType; onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const isActive = pathname === href || (href === '/writing' && pathname === '/');
+  const isActive = pathname.startsWith(href);
 
   return (
     <Link href={href} className="w-full" onClick={onLinkClick}>
@@ -135,13 +136,13 @@ export function AppHeader() {
           </Link>
           {user && (
             <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
-              {navLinks.slice(0, 3).map(link => (
+              {navLinks.slice(0, 4).map(link => (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
                     'transition-colors hover:text-primary',
-                    pathname === link.href || (link.href === '/writing' && pathname === '/') ? 'text-primary font-semibold' : 'text-muted-foreground'
+                    pathname.startsWith(link.href) ? 'text-primary font-semibold' : 'text-muted-foreground'
                   )}
                 >
                   {link.label}
