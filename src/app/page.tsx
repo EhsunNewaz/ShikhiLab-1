@@ -7,13 +7,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Loader2, Languages, Sparkles, Repeat, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
-import { useMounted } from '@/hooks/use-mounted';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const mounted = useMounted();
 
   useEffect(() => {
     if (!loading && user) {
@@ -21,7 +19,7 @@ export default function HomePage() {
     }
   }, [user, loading, router]);
 
-  if (!mounted || loading || user) {
+  if (loading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
