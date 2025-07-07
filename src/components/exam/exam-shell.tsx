@@ -4,26 +4,16 @@
 import type { ReactNode } from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { ExamHeader } from './exam-header';
-import { ExamFooter } from './exam-footer';
 import { cn } from '@/lib/utils';
 import { NotesPanel } from './notes-panel';
 import { InactivityWarningDialog } from './inactivity-warning-dialog';
 import { HelpDialog } from './help-dialog';
-
-interface QuestionState {
-  id: string;
-  status: 'unanswered' | 'answered' | 'reviewed';
-}
 
 interface ExamShellProps {
   children: ReactNode;
   onTimeUp: () => void;
   isSubmitted: boolean;
   onSubmit: () => void;
-  questions: QuestionState[];
-  currentQuestionIndex: number;
-  onSelectQuestion: (index: number) => void;
-  onToggleReview: () => void;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -33,10 +23,6 @@ export function ExamShell({
   onTimeUp,
   isSubmitted,
   onSubmit,
-  questions,
-  currentQuestionIndex,
-  onSelectQuestion,
-  onToggleReview,
 }: ExamShellProps) {
   const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
@@ -119,24 +105,15 @@ export function ExamShell({
     >
       <ExamHeader
         onTimeUp={onTimeUp}
-        onToggleNotes={() => setIsNotesPanelOpen(p => !p)}
-        onToggleHelp={() => setIsHelpOpen(true)}
         isSubmitted={isSubmitted}
         onSubmit={onSubmit}
-        onToggleReview={onToggleReview}
       />
 
-      {/* Main Content Area */}
-      <main className="h-full bg-white pt-[60px] pb-[60px]">
+      {/* Main Content Area - with padding for header and footer */}
+      <main className="h-full bg-white pt-[60px] pb-[160px]">
         {children}
       </main>
 
-      {/* Bottom Navigation */}
-      <ExamFooter
-        questions={questions}
-        currentQuestionIndex={currentQuestionIndex}
-        onSelectQuestion={onSelectQuestion}
-      />
 
       {/* Popups and Overlays */}
       <NotesPanel isOpen={isNotesPanelOpen} onClose={() => setIsNotesPanelOpen(false)} />

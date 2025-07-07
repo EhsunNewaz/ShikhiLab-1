@@ -18,9 +18,11 @@ import { SubmitConfirmationDialog } from '@/components/exam/submit-confirmation-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { BottomPanel } from '@/components/exam/bottom-panel';
+
+// Get the mock reading test for demonstration
+const readingTest = readingTestData[0];
 
 // We combine the static question data with a dynamic 'status'
 interface QuestionState extends ReadingQuestionData {
@@ -28,13 +30,10 @@ interface QuestionState extends ReadingQuestionData {
 }
 
 // Initialize question state from static data
-const initialQuestions: QuestionState[] = readingTestData[1].questions.map(q => ({
+const initialQuestions: QuestionState[] = readingTest.questions.map(q => ({
   ...q,
   status: 'unanswered',
 }));
-
-// Get the mock reading test for demonstration
-const readingTest = readingTestData[1];
 
 
 function ResultsCard({ score, total }: { score: number; total: number }) {
@@ -360,24 +359,21 @@ export default function MockTestPage() {
       });
   };
 
+  const currentPassageIndex = questions[currentQuestionIndex].passage - 1;
+
   return (
     <>
         <ExamShell
             onTimeUp={handleTimeUp}
-            questions={questions}
-            currentQuestionIndex={currentQuestionIndex}
-            onSelectQuestion={handleSelectQuestion}
-            onToggleReview={handleToggleReview}
             isSubmitted={isSubmitted}
             onSubmit={() => setShowSubmitDialog(true)}
         >
             <SplitScreenLayout
             leftPanel={
                 <div className="space-y-4">
-                    <h2 className="text-sm font-bold uppercase text-gray-500">Part 1</h2>
-                    <h1 className="text-2xl font-bold text-gray-800">Reading Passage 1</h1>
-                    <p className="text-sm text-gray-600">You should spend about 20 minutes on Questions 1-13, which are based on Reading Passage 1 below.</p>
-                    <InteractivePassage text={readingTest.passage} />
+                    <h1 className="text-2xl font-bold text-gray-800">Reading Passage {currentPassageIndex + 1}</h1>
+                    <p className="text-sm text-gray-600">You should spend about 20 minutes on Questions {readingTest.questions.find(q => q.passage === currentPassageIndex + 1)?.id}-{readingTest.questions.filter(q => q.passage === currentPassageIndex + 1).at(-1)?.id}, which are based on the passage below.</p>
+                    <InteractivePassage text={readingTest.passages[currentPassageIndex]} />
                 </div>
             }
             rightPanel={
@@ -394,16 +390,17 @@ export default function MockTestPage() {
                         />
                     </div>
                 </ScrollArea>
-                <div className="absolute bottom-5 right-5 flex gap-2">
-                    <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-white border-2 border-exam-green shadow-lg" onClick={handlePrevQuestion} disabled={currentQuestionIndex === 0}>
-                        <ChevronLeft className="h-6 w-6 text-exam-green" />
-                    </Button>
-                    <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-white border-2 border-exam-green shadow-lg" onClick={handleNextQuestion} disabled={currentQuestionIndex === questions.length - 1}>
-                        <ChevronRight className="h-6 w-6 text-exam-green" />
-                    </Button>
-                </div>
               </>
             }
+            />
+             <BottomPanel
+                questions={questions}
+                currentQuestionIndex={currentQuestionIndex}
+                onSelectQuestion={handleSelectQuestion}
+                onNext={handleNextQuestion}
+                onPrev={handlePrevQuestion}
+                onToggleReview={handleToggleReview}
+                isSubmitted={isSubmitted}
             />
         </ExamShell>
         <SubmitConfirmationDialog 

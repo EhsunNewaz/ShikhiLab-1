@@ -26,6 +26,7 @@ export type Module = {
 
 export type ReadingQuestion = {
   id: string;
+  passage: number; // Which passage (1, 2, or 3) this question belongs to
   type: 'fill-in-the-blank' | 'multiple-choice' | 'multiple-answer';
   instruction: string; // "Complete the sentences below.", "Choose the correct letter, A, B, or C."
   questionText: string; // For fill-in-the-blank, use '___' as placeholder
@@ -37,7 +38,7 @@ export type ReadingQuestion = {
 export type ReadingTest = {
   id: string;
   title: string;
-  passage: string;
+  passages: string[];
   questions: ReadingQuestion[];
 };
 
@@ -124,89 +125,64 @@ export const foundationSkills = {
     }
 }
 
+const generateQuestions = (passage: number, startId: number, count: number, type: 'multiple-choice' | 'fill-in-the-blank' = 'multiple-choice'): ReadingQuestion[] => {
+    return Array.from({ length: count }, (_, i) => {
+        const id = startId + i;
+        if (type === 'fill-in-the-blank') {
+            return {
+                id: `${id}`,
+                passage,
+                type: 'fill-in-the-blank',
+                instruction: 'Complete the sentence using ONE WORD from the passage.',
+                questionText: `This is a sample ___ for question ${id}.`,
+                options: [],
+                correctAnswer: 'answer',
+                explanation: `The correct answer is 'answer' because the text provides this information for question ${id}.`
+            }
+        }
+        return {
+            id: `${id}`,
+            passage,
+            type: 'multiple-choice',
+            instruction: 'Choose the correct letter, A, B, C, or D.',
+            questionText: `What is the main point of the paragraph related to question ${id}?`,
+            options: [`Option A for ${id}`, `Option B for ${id}`, `Option C for ${id}`, `Option D for ${id}`],
+            correctAnswer: `Option B for ${id}`,
+            explanation: `The passage explicitly states the information corresponding to Option B for question ${id}.`
+        };
+    });
+};
 
 export const readingTestData: ReadingTest[] = [
   {
-    id: 'history-of-tea',
-    title: 'The History of Tea',
-    passage: `The history of tea is long and complex, spreading across multiple cultures over the span of thousands of years. Tea likely originated in the Yunnan region during the Shang dynasty as a medicinal drink. The first recorded drinking of tea is in China, with the earliest records of tea consumption dating to the 10th century BC. It was not until the Tang dynasty that tea became a popular recreational drink, and it was during this time that the tea plant was first cultivated.
+    id: 'full-mock-test-1',
+    title: 'IELTS Academic Reading Test 1',
+    passages: [
+        `Passage 1: The Revolution in Communication.
+The late 20th century witnessed a revolution in communication technologies that has reshaped human interaction on a global scale. The advent of the internet, followed by the proliferation of mobile devices, has created an ecosystem of constant connectivity. Before this digital era, long-distance communication was primarily reliant on postal services and telephones, which were slower and less immediate. The internet dismantled these barriers, enabling real-time conversations across continents through email, instant messaging, and later, video calls. This shift has had profound effects on social structures, economies, and personal relationships.
+Socially, the internet has fostered the growth of virtual communities, connecting individuals with shared interests regardless of their geographical location. Economically, e-commerce has flourished, allowing businesses to reach a global customer base without the need for physical storefronts in every region. Personal relationships have also been transformed; families and friends can maintain close contact despite living thousands of miles apart. However, this hyper-connectivity is not without its drawbacks. Concerns about privacy, the spread of misinformation, and the impact of social media on mental health are significant challenges that society must navigate in this new digital landscape. The very definition of 'community' and 'friendship' is being redefined by these powerful tools.`,
+        
+        `Passage 2: The Science of Urban Planning.
+Urban planning is a technical and political process concerned with the development and design of land use and the built environment. It involves forecasting population growth, planning for infrastructure like transportation and utilities, and zoning areas for different types of development such as residential, commercial, and industrial. The primary goal of urban planning is to create functional, sustainable, and aesthetically pleasing communities for people to live, work, and play in.
+One of the key challenges in modern urban planning is sustainability. As cities continue to grow, they consume vast amounts of resources and generate significant pollution. Planners are increasingly focused on creating 'green cities' that incorporate renewable energy sources, efficient public transportation systems, and ample green spaces like parks and gardens. Mixed-use development, where residential, commercial, and recreational spaces are integrated, is another popular strategy. This approach reduces the need for long commutes, thereby decreasing traffic congestion and carbon emissions. Furthermore, preserving historical architecture and cultural heritage while accommodating new growth is a delicate balancing act that requires careful consideration and community involvement. Effective urban planning is crucial for managing the complexities of urban life and ensuring a high quality of life for all residents.`,
 
-From China, tea spread to Korea and Japan. It was introduced to Japan by Buddhist monks who had traveled to China to study. Tea became a central part of Japanese culture, leading to the development of the Japanese tea ceremony.
-
-Tea was introduced to Europe by Portuguese priests and merchants during the 16th century. It became popular in Britain during the 17th century, where the British introduced tea production, as well as tea consumption, to India, in order to compete with the Chinese monopoly on tea. The British appetite for tea was a catalyst for the Opium Wars with China in the 19th century.`,
+        `Passage 3: The Enigma of Honeybee Navigation.
+Honeybees possess a remarkable ability to navigate the landscape, find flowers, and return to their hive with astonishing precision. This sophisticated navigational skill is crucial for their survival and the pollination of countless plant species. For decades, scientists have been captivated by the question of how these tiny insects achieve such feats. The pioneering research of Karl von Frisch in the mid-20th century revealed one of the primary mechanisms: the 'waggle dance'. This is a form of symbolic communication where a returning forager bee performs a specific pattern of movements to inform its hive-mates of the direction and distance to a food source. The angle of the dance relative to the vertical axis of the honeycomb indicates the direction of the food source in relation to the sun, while the duration of the 'waggling' part of the dance signifies the distance.
+Beyond the waggle dance, bees also rely on a combination of other cues. They have an internal 'sun compass' that allows them to track the sun's position in the sky, even on cloudy days, by detecting patterns of polarized light. They also create and memorize mental maps of their surroundings, using landmarks like trees, rivers, and buildings to orient themselves. This cognitive mapping ability suggests a level of spatial awareness previously thought to be exclusive to larger-brained animals. Recent studies even indicate that bees might be sensitive to the Earth's magnetic field, using it as an additional navigational aid. The honeybee's brain, though no bigger than a sesame seed, integrates these multiple streams of information to create a robust and flexible navigation system.`
+    ],
     questions: [
-      {
-        id: '1',
-        type: 'fill-in-the-blank',
-        instruction: 'Complete the sentence below. Write ONE WORD ONLY from the passage.',
-        questionText: 'Tea became a widespread recreational beverage during the ___ dynasty.',
-        options: [],
-        correctAnswer: 'Tang',
-        explanation: 'The passage states, "...it was not until the Tang dynasty that tea became a popular recreational drink..."',
-      },
-      {
-        id: '2',
-        type: 'multiple-choice',
-        instruction: 'Choose the correct letter, A, B, or C.',
-        questionText: 'According to the text, who first brought tea to Japan?',
-        options: ['Portuguese merchants', 'British traders', 'Buddhist monks'],
-        correctAnswer: 'Buddhist monks',
-        explanation: 'The text says, tea "was introduced to Japan by Buddhist monks who had traveled to China to study."',
-      },
-      {
-        id: '3',
-        type: 'multiple-answer',
-        instruction: 'Which TWO of the following statements are true according to the passage?',
-        questionText: 'Select two correct options.',
-        options: [
-            'Tea originated in India.', 
-            'The British started tea production to rival China.',
-            'Tea was initially used as medicine.',
-            'The Japanese tea ceremony was developed in China.'
-        ],
-        correctAnswer: ['The British started tea production to rival China.', 'Tea was initially used as medicine.'],
-        explanation: 'The passage confirms tea was a "medicinal drink" and that the British introduced production in India "in order to compete with the Chinese monopoly on tea."',
-      },
-      // Adding a few more to reach a decent number for demo purposes
-      {
-        id: '4',
-        type: 'multiple-choice',
-        instruction: 'Choose the correct letter, A, B, or C.',
-        questionText: 'When did tea become popular in Britain?',
-        options: ['16th Century', '17th Century', '19th Century'],
-        correctAnswer: '17th Century',
-        explanation: 'The passage mentions tea "became popular in Britain during the 17th century..."',
-      },
-      {
-        id: '5',
-        type: 'fill-in-the-blank',
-        instruction: 'Complete the sentence below. Write ONE WORD ONLY from the passage.',
-        questionText: 'The British desire for tea was a factor in the ___ Wars.',
-        options: [],
-        correctAnswer: 'Opium',
-        explanation: 'The text states, "The British appetite for tea was a catalyst for the Opium Wars with China..."',
-      },
+        // Passage 1: Questions 1-13
+        ...generateQuestions(1, 1, 5),
+        ...generateQuestions(1, 6, 8, 'fill-in-the-blank'),
+        // Passage 2: Questions 14-26
+        ...generateQuestions(2, 14, 7),
+        ...generateQuestions(2, 21, 6, 'fill-in-the-blank'),
+        // Passage 3: Questions 27-40
+        ...generateQuestions(3, 27, 5),
+        ...generateQuestions(3, 32, 9, 'fill-in-the-blank'),
     ],
   },
 ];
-
-// Re-creating the mock tests to have enough questions for the footer to be meaningful
-const fullTestQuestions: ReadingQuestion[] = Array.from({ length: 40 }, (_, i) => {
-    const questionNumber = i + 1;
-    const baseQuestion = readingTestData[0].questions[i % readingTestData[0].questions.length];
-    return {
-        ...baseQuestion,
-        id: `${questionNumber}`,
-        questionText: `(Q${questionNumber}) ` + baseQuestion.questionText
-    }
-});
-
-readingTestData.push({
-    id: 'full-mock-test-1',
-    title: 'Full Reading Mock Test',
-    passage: readingTestData[0].passage, // reuse passage for simplicity
-    questions: fullTestQuestions
-});
 
 
 export const mockTests: MockTest[] = [
@@ -220,7 +196,7 @@ export const mockTests: MockTest[] = [
         id: 'mock-2',
         title: 'IELTS General Training Mock Test 1',
         description: 'A full-length mock test for the General Training IELTS format. Covers all four modules.',
-        href: '/mock-tests/1'
+        href: '/mock-tests/1' // Note: For demo, points to the same test
     }
 ];
 
