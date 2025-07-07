@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 84% 4.9%;
 
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 217 91% 59%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -32,7 +32,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 217.2 91.2% 59.8%;
 
-    --radius: 0.5rem;
+    --radius: 9999px;
   }
 
   .dark {
@@ -63,6 +63,74 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Exam UI contrast themes */
+  body.theme-contrast-yellow {
+    --background: 54 86% 75%; /* A pleasant yellow */
+    --foreground: 240 10% 3.9%;
+    --card: 54 86% 75%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 54 86% 75%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 217 91% 59%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 47 91% 95%;
+    --secondary-foreground: 240 10% 3.9%;
+    --muted: 47 91% 95%;
+    --muted-foreground: 240 5.9% 10%;
+    --accent: 47 91% 95%;
+    --accent-foreground: 240 5.9% 10%;
+    --border: 47 80% 80%;
+    --input: 47 80% 80%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+  }
+
+  body.theme-contrast-dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+  }
+
+  /* Exam UI text size themes */
+  body.text-size-large {
+    font-size: 110%;
+  }
+  
+  body.text-size-xl {
+    font-size: 120%;
+  }
+
+  /* Exam Timer styles */
+  @keyframes exam-flash {
+    50% {
+      background-color: hsl(var(--destructive));
+      color: hsl(var(--destructive-foreground));
+    }
+  }
+
+  .timer.warning {
+    color: #f97316; /* Tailwind orange-500 */
+  }
+
+  .timer.critical {
+    animation: exam-flash 1s infinite steps(1, end);
   }
 }
 
