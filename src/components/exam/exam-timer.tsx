@@ -33,20 +33,19 @@ export function ExamTimer({ initialMinutes = 40, onTimeUp }: TimerProps) {
   const seconds = timeLeft % 60;
 
   const timerClasses = cn(
-    'timer text-lg font-bold px-4 py-2 rounded-sm border border-gray-300 bg-white',
+    'timer text-lg font-bold flex items-center justify-center',
     {
       'warning': timeLeft <= 600 && timeLeft > 300, // 10 minutes
       'critical': timeLeft <= 300 && timeLeft > 0, // 5 minutes
     }
   );
-
-  if (!mounted) {
-    return <div className="text-lg font-bold">{`Time Left: ${String(initialMinutes).padStart(2, '0')}:00`}</div>;
-  }
+  
+  const initialDisplay = `Time Left: ${String(initialMinutes).padStart(2, '0')}:00`;
+  const currentDisplay = `Time Left: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   return (
-    <div className={timerClasses}>
-      Time Left: {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+    <div style={{ width: '120px', height: '40px', border: '1px solid #cccccc' }} className={cn(timerClasses, 'bg-white rounded-[4px]')}>
+      {mounted ? currentDisplay : initialDisplay}
     </div>
   );
 }

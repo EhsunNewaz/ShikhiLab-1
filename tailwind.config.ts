@@ -60,12 +60,14 @@ export default {
         'exam-background': '#f5f5f5',
         'exam-border': '#e0e0e0',
         'exam-border-light': '#cccccc',
+        'exam-border-timer': '#cccccc',
         'exam-text': '#333333',
         'exam-green': '#4CAF50',
         'exam-blue': '#2196F3',
         'exam-orange': '#FF9800',
         'exam-yellow': '#FFC107',
-        'exam-highlight': '#ffff00',
+        'exam-highlight-bg': '#ffff00',
+        'exam-highlight-border': '#ffd700',
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',
@@ -88,6 +90,7 @@ export default {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        '4px': '4px',
       },
       keyframes: {
         'accordion-down': {

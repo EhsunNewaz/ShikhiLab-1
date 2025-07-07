@@ -23,8 +23,9 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 217.2 91.2% 59.8%;
-    --radius: 9999px; /* Changed for pill-shaped buttons */
+    --radius: 4px; /* Changed to specific 4px */
     --exam-highlight: #ffff00;
+    --exam-highlight-border: #ffd700;
   }
 
   .dark {
@@ -58,12 +59,12 @@
   }
 
   /* Exam UI contrast themes */
-  body.theme-contrast-yellow { /* Now Yellow on Black */
-    --background: 240 10% 3.9%; /* Black */
+  body.theme-contrast-yellow { /* Yellow on Black */
+    --background: 0 0% 0%; /* Black */
     --foreground: 60 100% 50%; /* Yellow */
-    --card: 240 10% 3.9%;
+    --card: 0 0% 0%;
     --card-foreground: 60 100% 50%;
-    --popover: 240 10% 3.9%;
+    --popover: 0 0% 0%;
     --popover-foreground: 60 100% 50%;
     --primary: 217 91% 59%;
     --primary-foreground: 210 40% 98%;
@@ -110,22 +111,30 @@
   }
 
   /* Exam Timer styles */
-  @keyframes exam-flash {
+  @keyframes exam-flash-critical {
     50% {
-      background-color: hsl(var(--destructive));
-      color: hsl(var(--destructive-foreground));
+      background-color: #ffcccc; /* critical state background */
+      color: #ff0000; /* critical state text */
+    }
+  }
+
+  @keyframes exam-flash-warning {
+    50% {
+      background-color: #ffe6e6; /* warning state background */
+      color: #ff0000; /* warning state text */
     }
   }
 
   .timer.warning {
     color: #ff0000;
     background-color: #ffe6e6;
+    animation: exam-flash-warning 1s infinite steps(1, end);
   }
 
   .timer.critical {
     color: #ff0000;
     background-color: #ffcccc;
-    animation: exam-flash 0.5s infinite steps(1, end);
+    animation: exam-flash-critical 0.5s infinite steps(1, end);
   }
 }
 
@@ -142,6 +151,6 @@
 @layer utilities {
   .text-highlight {
     background-color: var(--exam-highlight);
-    border-bottom: 2px solid #ffd700;
+    border-bottom: 2px solid var(--exam-highlight-border);
   }
 }

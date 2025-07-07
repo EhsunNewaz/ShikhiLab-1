@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, type MouseEvent } from 'react';
-import { cn } from '@/lib/utils';
 
 interface Highlight {
   id: string;
@@ -63,11 +62,7 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
     const highlightSpan = targetElement.closest('[data-highlight-id]');
     const highlightId = highlightSpan ? highlightSpan.getAttribute('data-highlight-id') : null;
 
-    if (highlightId) {
-        setContextMenu({ x: event.pageX, y: event.pageY, visible: true, selection: null, targetHighlightId: highlightId });
-    } else if (selection && selection.toString().trim().length > 0) {
-      setContextMenu({ x: event.pageX, y: event.pageY, visible: true, selection, targetHighlightId: null });
-    }
+    setContextMenu({ x: event.pageX, y: event.pageY, visible: true, selection, targetHighlightId: highlightId });
   };
 
   const addHighlight = () => {
@@ -75,21 +70,38 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
     if (!selection || !passageRef.current) return;
 
     const range = selection.getRangeAt(0);
-    const passageTextNode = passageRef.current.firstChild;
+    const container = passageRef.current;
     
-    if (!passageTextNode || !passageTextNode.contains(range.startContainer) || !passageTextNode.contains(range.endContainer)) {
-        return;
-    }
+    // Find the absolute start and end positions relative to the container div
+    let absoluteStart = 0, absoluteEnd = 0;
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    let currentNode = walker.nextNode();
+    let offset = 0;
+    let foundStart = false;
 
-    const start = range.startOffset;
-    const end = range.endOffset;
+    while(currentNode) {
+      if (currentNode === range.startContainer) {
+        absoluteStart = offset + range.startOffset;
+        foundStart = true;
+      }
+      if (currentNode === range.endContainer) {
+        absoluteEnd = offset + range.endOffset;
+        break;
+      }
+      if (!foundStart) {
+        offset += currentNode.textContent?.length || 0;
+      } else {
+        offset += currentNode.textContent?.length || 0;
+      }
+      currentNode = walker.nextNode();
+    }
     
-    const isOverlapping = highlights.some(h => (start < h.end && end > h.start));
+    const isOverlapping = highlights.some(h => (absoluteStart < h.end && absoluteEnd > h.start));
     if (isOverlapping) {
       return;
     }
     
-    setHighlights([...highlights, { id: crypto.randomUUID(), start, end }]);
+    setHighlights([...highlights, { id: crypto.randomUUID(), start: absoluteStart, end: absoluteEnd }]);
     setContextMenu(prev => ({...prev, visible: false}));
     selection.removeAllRanges();
   };
@@ -146,7 +158,7 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
             { label: 'Clear All Highlights', action: clearAllHighlights },
         ]
     }
-    return [];
+    return [{ label: 'Clear All Highlights', action: clearAllHighlights }];
   }, [contextMenu, highlights]);
 
   return (
