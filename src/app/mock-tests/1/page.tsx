@@ -345,7 +345,7 @@ export default function MockTestPage() {
             onSelectQuestion={handleSelectQuestion}
             onNextQuestion={handleNextQuestion}
             onPrevQuestion={handlePrevQuestion}
-            onToggleReview={onToggleReview}
+            onToggleReview={handleToggleReview}
             isSubmitted={isSubmitted}
             onSubmit={() => setShowSubmitDialog(true)}
         >
