@@ -9,7 +9,21 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMounted } from '@/hooks/use-mounted';
-import { courseData, getNextLesson } from '@/lib/course-data';
+import { courseData, getNextLesson, type Module } from '@/lib/course-data';
+
+const getModuleLink = (module: Module): string => {
+  switch (module.id) {
+    case 'writing':
+      return '/writing';
+    case 'speaking':
+      return '/speaking';
+    case 'listening':
+      return '/listening';
+    // For other modules, default to the first lesson's link.
+    default:
+      return module.lessons[0]?.href || '#';
+  }
+};
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -88,7 +102,7 @@ export default function DashboardPage() {
                 {courseData.map(module => {
                     const { icon: Icon } = module;
                     return (
-                        <Link href={module.lessons[0]?.href || '#'} key={module.id}>
+                        <Link href={getModuleLink(module)} key={module.id}>
                             <Card className="hover:border-primary transition-colors h-full">
                                 <CardHeader>
                                     <div className="flex items-center gap-4">
