@@ -7,11 +7,15 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowRight, ClipboardCheck } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMounted } from '@/hooks/use-mounted';
 import { courseData, getNextLesson, type Module } from '@/lib/course-data';
 import { useEffect } from 'react';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import type { MockTestResult } from '@/lib/types';
+
 
 const getModuleLink = (module: Module): string => {
   switch (module.id) {
@@ -28,6 +32,57 @@ const getModuleLink = (module: Module): string => {
       return module.lessons[0]?.href || '#';
   }
 };
+
+function MockTestHistory({ history }: { history: MockTestResult[] }) {
+    if (!history || history.length === 0) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Mock Test History</CardTitle>
+                    <CardDescription>Your past mock test scores will appear here.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                        <ClipboardCheck className="h-12 w-12 mb-4" />
+                        <p className="font-semibold">No tests taken yet</p>
+                        <p className="text-sm">Complete a full mock test to see your results.</p>
+                         <Button asChild variant="secondary" className="mt-4">
+                            <Link href="/mock-tests">Go to Mock Tests</Link>
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    const sortedHistory = [...history].sort((a, b) => {
+        const dateA = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(0);
+        const dateB = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(0);
+        return dateB.getTime() - dateA.getTime();
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Mock Test History</CardTitle>
+                <CardDescription>Review your performance on past mock tests.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {sortedHistory.slice(0, 3).map((result, index) => (
+                     <div key={index} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg">
+                        <div>
+                            <p className="font-semibold">Mock Test: {result.testId}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {result.completedAt?.toDate ? format(result.completedAt.toDate(), "PPP") : 'Date unknown'}
+                            </p>
+                        </div>
+                        <Badge className="text-lg">Score: {result.score}/{result.total}</Badge>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -106,6 +161,8 @@ export default function DashboardPage() {
             </Card>
         </div>
 
+        <MockTestHistory history={user.mockTestHistory || []} />
+
         <div>
             <h2 className="text-2xl font-bold font-headline mb-4">Modules</h2>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -166,6 +223,9 @@ function DashboardSkeleton() {
                 <Skeleton className="h-12 w-full" />
               </CardContent>
             </Card>
+        </div>
+        <div>
+            <Skeleton className="h-28 w-full" />
         </div>
          <div>
             <Skeleton className="h-8 w-1/3 mb-4" />

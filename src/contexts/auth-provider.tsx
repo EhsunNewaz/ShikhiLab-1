@@ -3,7 +3,7 @@
 
 import { createContext, useState, useEffect, type ReactNode } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot, type DocumentData, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, type DocumentData, serverTimestamp, type Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
 import { useRouter } from 'next/navigation';
@@ -26,6 +26,14 @@ const MOCK_USER: UserProfile = {
   progress: {
     diagnosticTestScore: 8,
   },
+  mockTestHistory: [
+    {
+      testId: 'mock-1',
+      score: 32,
+      total: 40,
+      completedAt: { toDate: () => new Date('2024-05-10T10:00:00Z') } as unknown as Timestamp
+    }
+  ],
   createdAt: serverTimestamp(),
 };
 

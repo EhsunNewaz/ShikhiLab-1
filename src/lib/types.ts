@@ -25,6 +25,15 @@ import type { Timestamp } from 'firebase/firestore';
  * ======================================================
  */
 
+/**
+ * Represents the result of a single mock test.
+ */
+export interface MockTestResult {
+  testId: string;
+  score: number;
+  total: number;
+  completedAt: Timestamp;
+}
 
 /**
  * Collection: /users
@@ -42,6 +51,7 @@ export interface UserProfile {
     diagnosticTestScore?: number;
     // other summary progress fields can go here
   };
+  mockTestHistory?: MockTestResult[];
   createdAt: Timestamp;
 }
 
@@ -94,7 +104,7 @@ export interface Question {
 /**
  * Sub-Collection: /users/{userId}/user_progress
  * Each document tracks completion of a single lesson or quiz.
- * The document ID should be the ID of the corresponding lesson or quiz.
+ * The document ID should be the corresponding lesson or quiz.
  */
 export interface UserProgress {
   type: 'lesson' | 'quiz';

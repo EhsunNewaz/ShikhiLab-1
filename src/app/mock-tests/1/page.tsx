@@ -2,6 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth-hook';
+import { useToast } from '@/hooks/use-toast';
 import { ExamShell } from '@/components/exam/exam-shell';
 import { SplitScreenLayout } from '@/components/exam/split-screen-layout';
 import { InteractivePassage } from '@/components/exam/interactive-passage';
@@ -200,6 +204,8 @@ export default function MockTestPage() {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [score, setScore] = useState(0);
   
+  const { user } = useAuth();
+  const { toast } = useToast();
   const storageKey = `answers_${readingTest.id}`;
   const [answers, setAnswers] = useState<Record<string, any>>(() => {
     if (typeof window === 'undefined') {
@@ -259,7 +265,7 @@ export default function MockTestPage() {
     handleSubmit();
   };
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setShowSubmitDialog(false);
     
     let calculatedScore = 0;
@@ -273,6 +279,33 @@ export default function MockTestPage() {
     setIsSubmitted(true);
     setIsLocked(true);
     window.localStorage.removeItem(storageKey);
+
+    // If user is logged in, save the result to Firestore
+    if (user && db?.app) {
+      const userRef = doc(db, 'users', user.uid);
+      const newResult = {
+        testId: readingTest.id,
+        score: calculatedScore,
+        total: questions.length,
+        completedAt: serverTimestamp(),
+      };
+      try {
+        await updateDoc(userRef, {
+          mockTestHistory: arrayUnion(newResult),
+        });
+        toast({
+          title: 'Result Saved',
+          description: 'Your mock test result has been saved to your profile.',
+        });
+      } catch (error) {
+        console.error('Failed to save test result:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Save Failed',
+          description: 'Could not save your result. Please try again later.',
+        });
+      }
+    }
   }
 
   const handleSelectQuestion = (index: number) => {
