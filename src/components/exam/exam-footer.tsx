@@ -4,7 +4,7 @@
 import { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Flag, ArrowUp, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flag, ArrowUp, ChevronDown, Send } from 'lucide-react';
 
 interface QuestionState {
   id: number;
@@ -20,6 +20,8 @@ interface ExamFooterProps {
   onToggleReview: () => void;
   isMinimized: boolean;
   onToggleMinimize: () => void;
+  onSubmit: () => void;
+  isSubmitted: boolean;
 }
 
 export function ExamFooter({
@@ -31,6 +33,8 @@ export function ExamFooter({
   onToggleReview,
   isMinimized,
   onToggleMinimize,
+  onSubmit,
+  isSubmitted,
 }: ExamFooterProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const questionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -111,6 +115,7 @@ export function ExamFooter({
         style={{ width: '80px', height: '40px' }}
         className="rounded-4px border-none bg-exam-orange text-white hover:bg-exam-orange-hover"
         onClick={onToggleReview}
+        disabled={isSubmitted}
       >
         <Flag className="mr-2" />
         Review
@@ -182,16 +187,27 @@ export function ExamFooter({
         </Button>
       </div>
 
-      {/* Right Side: Minimize */}
-      <Button
-        style={{ width: '40px', height: '40px' }}
-        variant="outline"
-        className="rounded-4px border-none bg-exam-yellow p-0 text-black hover:bg-exam-yellow/90"
-        onClick={onToggleMinimize}
-        aria-label="Minimize navigation"
-      >
-        <ChevronDown />
-      </Button>
+      {/* Right Side: Minimize & Submit */}
+      <div className="flex items-center gap-2">
+         <Button
+            style={{ width: 'auto', height: '40px' }}
+            className="rounded-4px border-none bg-exam-green px-4 text-white hover:bg-exam-green-hover"
+            onClick={onSubmit}
+            disabled={isSubmitted}
+          >
+            <Send className="mr-2" />
+            Submit Test
+          </Button>
+          <Button
+            style={{ width: '40px', height: '40px' }}
+            variant="outline"
+            className="rounded-4px border-none bg-exam-yellow p-0 text-black hover:bg-exam-yellow/90"
+            onClick={onToggleMinimize}
+            aria-label="Minimize navigation"
+          >
+            <ChevronDown />
+          </Button>
+      </div>
     </footer>
   );
 }

@@ -25,6 +25,8 @@ interface ExamShellProps {
   onNextQuestion: () => void;
   onPrevQuestion: () => void;
   onToggleReview: () => void;
+  onSubmit: () => void;
+  isSubmitted: boolean;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -33,6 +35,8 @@ export function ExamShell({
   children,
   onTimeUp,
   isLocked,
+  isSubmitted,
+  onSubmit,
   ...footerProps
 }: ExamShellProps) {
   const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
@@ -47,6 +51,9 @@ export function ExamShell({
     if (inactivityTimer.current) {
       clearTimeout(inactivityTimer.current);
     }
+    // Don't set new timer if test is submitted
+    if (isSubmitted) return;
+
     inactivityTimer.current = setTimeout(() => {
       setShowInactivityModal(true);
     }, INACTIVITY_TIMEOUT);
@@ -112,6 +119,13 @@ export function ExamShell({
     };
   }, []);
 
+  // Clear timer when submitted
+  useEffect(() => {
+    if (isSubmitted && inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+    }
+  }, [isSubmitted]);
+
   const handleContinue = () => {
     setShowInactivityModal(false);
     resetInactivityTimer();
@@ -120,7 +134,7 @@ export function ExamShell({
   return (
     <div
       className={cn('h-screen w-screen bg-exam-background font-exam text-exam-text', {
-        'pointer-events-none opacity-75': isLocked,
+        'pointer-events-none opacity-75': isLocked && !isSubmitted, // only lock if not submitted
       })}
     >
       <ExamHeader
@@ -156,6 +170,8 @@ export function ExamShell({
         {...footerProps}
         isMinimized={isFooterMinimized}
         onToggleMinimize={() => setIsFooterMinimized(p => !p)}
+        onSubmit={onSubmit}
+        isSubmitted={isSubmitted}
       />
 
       {/* Popups and Overlays */}
