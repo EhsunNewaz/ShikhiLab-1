@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Menu, BookOpenText, MessageSquare, PenSquare, Mic, Headphones, LayoutDashboard, LogOut, ChevronDown, BrainCircuit, ClipboardCheck, BookOpen } from 'lucide-react';
@@ -128,11 +128,17 @@ export function AppHeader() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { user, loading } = useAuth();
   const mounted = useMounted();
+  const [hideHeader, setHideHeader] = useState(false);
+
+  useEffect(() => {
+    setHideHeader(pathname.startsWith('/mock-tests/'));
+  }, [pathname]);
+
   
   const isPublicPage = !user && pathname === '/';
 
   // Do not render the header for the mock test pages, as they have their own shell.
-  if (pathname.startsWith('/mock-tests/')) {
+  if (hideHeader) {
     return null;
   }
 
