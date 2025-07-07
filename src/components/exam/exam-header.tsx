@@ -16,21 +16,21 @@ interface ExamHeaderProps {
 
 export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHide, onToggleHelp, isContentHidden }: ExamHeaderProps) {
     return (
-      <header className="relative fixed top-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between border-b-2 border-exam-border bg-exam-background px-6 text-exam-text font-exam">
+      <header className="fixed top-0 left-0 right-0 z-10 grid h-[60px] grid-cols-3 items-center border-b-2 border-exam-border bg-exam-background px-6 text-exam-text font-exam">
         {/* Left Side: Instructions Box */}
-        <div className="flex items-center gap-4">
+        <div className="flex justify-start">
           <div className="h-[40px] w-[300px] overflow-hidden rounded-4px border border-exam-border-timer bg-white p-2 text-sm text-exam-text shadow-inner">
             IELTS Reading Test: Instructions for this section will appear here.
           </div>
         </div>
         
-        {/* Center: Timer (Absolutely Positioned) */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {/* Center: Timer */}
+        <div className="flex justify-center">
           <ExamTimer initialMinutes={40} onTimeUp={onTimeUp} />
         </div>
 
         {/* Right Side: Controls */}
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center justify-end gap-2 text-sm">
             <Button
               style={{ width: 'auto', height: '40px' }}
               className="gap-2 rounded-4px bg-white text-exam-text hover:bg-gray-200"

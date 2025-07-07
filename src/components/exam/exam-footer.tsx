@@ -106,23 +106,26 @@ export function ExamFooter({
 
   return (
     <footer
-      className="fixed bottom-0 left-0 right-0 z-10 flex h-[60px] items-center justify-between border-t-2 border-exam-border-light bg-[#e8e8e8] px-6 text-exam-text font-exam"
+      className="fixed bottom-0 left-0 right-0 z-10 grid h-[60px] grid-cols-3 items-center border-t-2 border-exam-border-light bg-[#e8e8e8] px-6 text-exam-text font-exam"
       role="navigation"
       aria-label="Test Navigation"
     >
       {/* Left Side: Review Button */}
-      <Button
-        style={{ width: 'auto', height: '40px' }}
-        className="rounded-4px border-none bg-exam-orange px-4 text-white hover:bg-exam-orange-hover"
-        onClick={onToggleReview}
-        disabled={isSubmitted}
-      >
-        <Flag className="mr-2" />
-        Review
-      </Button>
+      <div className="flex justify-start">
+        <Button
+          style={{ width: 'auto', height: '40px' }}
+          className="rounded-4px border-none bg-exam-orange px-4 text-white hover:bg-exam-orange-hover"
+          onClick={onToggleReview}
+          disabled={isSubmitted}
+        >
+          <Flag className="mr-2" />
+          Review
+        </Button>
+      </div>
+
 
       {/* Center: Navigation */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2">
         <Button
           style={{ width: '50px', height: '40px' }}
           className="rounded-4px border-none bg-exam-blue p-0 text-white hover:bg-exam-blue-hover disabled:bg-[#cccccc] disabled:opacity-100"
@@ -188,7 +191,7 @@ export function ExamFooter({
       </div>
 
       {/* Right Side: Minimize & Submit */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-end gap-2">
          <Button
             style={{ width: 'auto', height: '40px' }}
             className="rounded-4px border-none bg-exam-green px-4 text-white hover:bg-exam-green-hover"
