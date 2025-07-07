@@ -1,5 +1,5 @@
 
-import { BookMarked, Mic, PenSquare, Ear, BookOpen } from 'lucide-react';
+import { BookMarked, Mic, PenSquare, Ear, BookOpen, CheckCircle, XCircle } from 'lucide-react';
 
 export type Lesson = {
   id: string;
@@ -13,6 +13,7 @@ export type Lesson = {
   transcriptBangla?: string;
   transcriptEnglish?: string;
   quizId?: string;
+  readingTestId?: string;
 };
 
 export type Module = {
@@ -22,6 +23,70 @@ export type Module = {
   icon: React.ElementType;
   lessons: Lesson[];
 };
+
+export type ReadingQuestion = {
+  id: string;
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+};
+
+export type ReadingTest = {
+  id: string;
+  title: string;
+  passage: string;
+  questions: ReadingQuestion[];
+};
+
+export const readingTestData: ReadingTest[] = [
+  {
+    id: 'history-of-tea',
+    title: 'The History of Tea',
+    passage: `The history of tea is long and complex, spreading across multiple cultures over the span of thousands of years. Tea likely originated in the Yunnan region during the Shang dynasty as a medicinal drink. The first recorded drinking of tea is in China, with the earliest records of tea consumption dating to the 10th century BC. It was not until the Tang dynasty that tea became a popular recreational drink, and it was during this time that the tea plant was first cultivated.
+
+From China, tea spread to Korea and Japan. It was introduced to Japan by Buddhist monks who had traveled to China to study. Tea became a central part of Japanese culture, leading to the development of the Japanese tea ceremony.
+
+Tea was introduced to Europe by Portuguese priests and merchants during the 16th century. It became popular in Britain during the 17th century, where the British introduced tea production, as well as tea consumption, to India, in order to compete with the Chinese monopoly on tea. The British appetite for tea was a catalyst for the Opium Wars with China in the 19th century.`,
+    questions: [
+      {
+        id: 'q1',
+        questionText: 'Where did tea most likely originate?',
+        options: ['Japan', 'India', 'Yunnan, China', 'Britain'],
+        correctAnswer: 'Yunnan, China',
+        explanation: 'The passage states, "Tea likely originated in the Yunnan region during the Shang dynasty as a medicinal drink."',
+      },
+      {
+        id: 'q2',
+        questionText: 'During which dynasty did tea become a popular recreational drink?',
+        options: ['Shang Dynasty', 'Tang Dynasty', 'Ming Dynasty', 'Han Dynasty'],
+        correctAnswer: 'Tang Dynasty',
+        explanation: 'The text says, "It was not until the Tang dynasty that tea became a popular recreational drink..."',
+      },
+      {
+        id: 'q3',
+        questionText: 'Tea was first introduced to Europe by the British.',
+        options: ['True', 'False'],
+        correctAnswer: 'False',
+        explanation: 'The passage mentions, "Tea was introduced to Europe by Portuguese priests and merchants during the 16th century."',
+      },
+      {
+        id: 'q4',
+        questionText: 'Who introduced tea to Japan?',
+        options: ['Portuguese merchants', 'British traders', 'Chinese emperors', 'Buddhist monks'],
+        correctAnswer: 'Buddhist monks',
+        explanation: 'According to the text, tea "was introduced to Japan by Buddhist monks who had traveled to China to study."',
+      },
+      {
+        id: 'q5',
+        questionText: 'The British introduction of tea production in India was to compete with the Chinese tea monopoly.',
+        options: ['True', 'False'],
+        correctAnswer: 'True',
+        explanation: 'The passage clearly states the British introduced tea production in India "in order to compete with the Chinese monopoly on tea."',
+      },
+    ],
+  },
+];
 
 export const courseData: Module[] = [
   {
@@ -71,7 +136,7 @@ export const courseData: Module[] = [
     description: 'Develop techniques for skimming, scanning, and understanding complex texts.',
     icon: BookOpen,
     lessons: [
-      { id: 'reading-1', title: 'Skimming vs. Scanning', titleEnglish: 'Skimming vs. Scanning', titleBangla: 'স্কিমিং বনাম স্ক্যানিং', description: 'Learn the difference and when to use each.', isCompleted: false, href: '/lessons/reading-1' },
+      { id: 'reading-1', title: 'Practice Test: The History of Tea', titleEnglish: 'Practice Test: The History of Tea', titleBangla: 'অনুশীলনী পরীক্ষা: চায়ের ইতিহাস', description: 'Learn the difference and when to use each.', isCompleted: false, href: '/reading/practice/history-of-tea', readingTestId: 'history-of-tea' },
       { id: 'reading-2', title: 'Matching Headings Questions', titleEnglish: 'Matching Headings Questions', titleBangla: 'শিরোনাম মেলানো প্রশ্ন', description: 'A common and tricky question type.', isCompleted: false, href: '/lessons/reading-2' },
     ],
   },
