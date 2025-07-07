@@ -136,7 +136,8 @@ function DesktopNavLink({ href, label }: { href: string; label: string }) {
 export function AppHeader() {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const mounted = useMounted();
   
   const isPublicPage = !user && pathname === '/';
 
@@ -144,7 +145,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-auto flex items-center">
-          {user && (
+          {mounted && !loading && user && (
             <div className="md:hidden mr-2">
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
@@ -187,39 +188,41 @@ export function AppHeader() {
             <span className="font-bold font-headline sm:inline-block">ShikhiLab</span>
           </Link>
           <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
-             {isPublicPage ? (
-                 publicNavLinks.map(link => (
-                    <DesktopNavLink key={link.href} {...link} />
-                ))
-            ) : user ? (
-                <>
-                    {mainNavLinks.map(link => (
+             {mounted && !loading ? (
+                 isPublicPage ? (
+                     publicNavLinks.map(link => (
                         <DesktopNavLink key={link.href} {...link} />
-                    ))}
+                    ))
+                ) : user ? (
+                    <>
+                        {mainNavLinks.map(link => (
+                            <DesktopNavLink key={link.href} {...link} />
+                        ))}
 
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                           <Button variant="ghost" className="px-0 gap-1 text-muted-foreground hover:text-primary focus:text-primary data-[state=open]:text-primary">
-                               IELTS Modules
-                               <ChevronDown className="h-4 w-4" />
-                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            {moduleNavLinks.map(link => (
-                                <DropdownMenuItem key={link.href} asChild>
-                                    <Link href={link.href}>
-                                        <link.icon className="mr-2 h-4 w-4" />
-                                        {link.label}
-                                    </Link>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="px-0 gap-1 text-muted-foreground hover:text-primary focus:text-primary data-[state=open]:text-primary">
+                                IELTS Modules
+                                <ChevronDown className="h-4 w-4" />
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                {moduleNavLinks.map(link => (
+                                    <DropdownMenuItem key={link.href} asChild>
+                                        <Link href={link.href}>
+                                            <link.icon className="mr-2 h-4 w-4" />
+                                            {link.label}
+                                        </Link>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
-                    {secondaryNavLinks.map(link => (
-                        <DesktopNavLink key={link.href} {...link} />
-                    ))}
-                </>
+                        {secondaryNavLinks.map(link => (
+                            <DesktopNavLink key={link.href} {...link} />
+                        ))}
+                    </>
+                ) : null
             ) : null}
           </nav>
         </div>
