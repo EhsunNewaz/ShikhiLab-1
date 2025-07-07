@@ -68,6 +68,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = async () => {
+    // If Firebase isn't configured, just clear the mock user state
+    if (!auth?.onAuthStateChanged) {
+        setUser(null);
+        return;
+    }
+    // Otherwise, sign out from Firebase
     if (auth?.signOut) {
       await signOut(auth);
     }
