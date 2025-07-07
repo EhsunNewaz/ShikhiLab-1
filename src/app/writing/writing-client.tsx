@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { getWritingFeedback, type GetWritingFeedbackOutput } from '@/ai/flows/get-writing-feedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { WordCounter } from '@/components/exam/word-counter';
 
 const practiceQuestions = [
   { id: 't2_1', type: 'Task 2', question: 'Some people believe that unpaid community service should be a compulsory part of high school programmes. To what extent do you agree or disagree?' },
@@ -41,14 +43,26 @@ function FeedbackCategory({ title, score, feedback }: FeedbackCategoryProps) {
 }
 
 export default function WritingClient() {
-  const [selectedQuestion, setSelectedQuestion] = useState(practiceQuestions[0].question);
+  const [selectedQuestionId, setSelectedQuestionId] = useState(practiceQuestions[0].id);
   const [essay, setEssay] = useState('');
   const [feedback, setFeedback] = useState<GetWritingFeedbackOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const selectedQuestion = useMemo(
+    () => practiceQuestions.find(q => q.id === selectedQuestionId)!,
+    [selectedQuestionId]
+  );
+  
+  const wordCount = useMemo(() => {
+    if (!essay.trim()) return 0;
+    return essay.trim().split(/\s+/).filter(Boolean).length;
+  }, [essay]);
+  
+  const wordCountMin = selectedQuestion.type === 'Task 1 (Academic)' ? 150 : 250;
+
   const handleGetFeedback = async () => {
-    if (!essay.trim() || essay.trim().split(' ').length < 50) {
+    if (wordCount < 50) {
       toast({
         variant: "destructive",
         title: "Essay is too short",
@@ -87,20 +101,20 @@ export default function WritingClient() {
           <CardDescription>Choose an official IELTS practice question to get started.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select onValueChange={setSelectedQuestion} defaultValue={selectedQuestion}>
+          <Select onValueChange={setSelectedQuestionId} defaultValue={selectedQuestionId}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a practice question" />
             </SelectTrigger>
             <SelectContent>
               {practiceQuestions.map((q) => (
-                <SelectItem key={q.id} value={q.question}>
+                <SelectItem key={q.id} value={q.id}>
                   ({q.type}) {q.question.substring(0, 80)}...
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="p-4 bg-muted/50 rounded-lg border">
-            <p className="text-sm text-foreground">{selectedQuestion}</p>
+            <p className="text-sm text-foreground">{selectedQuestion.question}</p>
           </div>
         </CardContent>
       </Card>
@@ -118,6 +132,9 @@ export default function WritingClient() {
             onChange={(e) => setEssay(e.target.value)}
             disabled={isLoading}
           />
+           <div className="text-right mt-2">
+            <WordCounter wordCount={wordCount} min={wordCountMin} />
+          </div>
         </CardContent>
       </Card>
 

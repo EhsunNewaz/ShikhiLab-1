@@ -1,8 +1,12 @@
 
+'use client';
+
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { ExamHeader } from './exam-header';
 import { ExamFooter } from './exam-footer';
 import { cn } from '@/lib/utils';
+import { NotesPanel } from './notes-panel';
 
 interface QuestionState {
   id: number;
@@ -27,13 +31,15 @@ export function ExamShell({
   isLocked,
   ...footerProps
 }: ExamShellProps) {
+  const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
+  
   return (
     <div
       className={cn('h-screen w-screen bg-[#f5f5f5] font-sans text-gray-800', {
         'pointer-events-none opacity-75': isLocked,
       })}
     >
-      <ExamHeader onTimeUp={onTimeUp} />
+      <ExamHeader onTimeUp={onTimeUp} onToggleNotes={() => setIsNotesPanelOpen(p => !p)} />
 
       {/* Main Content Area */}
       <main className="h-full overflow-y-auto bg-white pt-[60px] pb-[60px]">
@@ -42,6 +48,9 @@ export function ExamShell({
 
       {/* Bottom Navigation */}
       <ExamFooter {...footerProps} />
+
+      {/* Popups and Overlays */}
+      <NotesPanel isOpen={isNotesPanelOpen} onClose={() => setIsNotesPanelOpen(false)} />
     </div>
   );
 }

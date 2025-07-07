@@ -12,6 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { InteractivePassage } from '@/components/exam/interactive-passage';
+
 
 export default function ReadingPracticePage() {
   const params = useParams();
@@ -68,9 +70,7 @@ export default function ReadingPracticePage() {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[calc(100vh-16rem)] pr-4">
-              <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap font-body text-base">
-                {testData.passage}
-              </div>
+              <InteractivePassage text={testData.passage} />
             </ScrollArea>
           </CardContent>
         </Card>
