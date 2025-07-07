@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -13,13 +14,15 @@ interface NotesPanelProps {
 }
 
 export function NotesPanel({ isOpen, onClose }: NotesPanelProps) {
+  const nodeRef = useRef(null);
+  
   if (!isOpen) {
     return null;
   }
 
   return (
-    <Draggable handle=".handle">
-        <div className="fixed z-20 w-[300px] animate-in fade-in-50">
+    <Draggable handle=".handle" nodeRef={nodeRef}>
+        <div ref={nodeRef} className="fixed z-20 w-[300px] animate-in fade-in-50">
             <Card className="h-[400px] flex flex-col bg-[#fffacd] border-gray-400 shadow-2xl">
                 <CardHeader className="handle flex flex-row items-center justify-between p-3 bg-gray-200/50 cursor-move">
                     <CardTitle className="text-base font-semibold text-gray-800">Notes</CardTitle>
