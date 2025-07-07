@@ -22,7 +22,7 @@ export function NotesPanel({ isOpen, onClose }: NotesPanelProps) {
 
   return (
     <Draggable handle=".handle" nodeRef={nodeRef}>
-        <div ref={nodeRef} className="fixed z-20 w-[300px] animate-in fade-in-50">
+        <div ref={nodeRef} className="fixed z-20 w-[300px]">
             <Card className="h-[400px] flex flex-col bg-[#fffacd] border-gray-400 shadow-2xl">
                 <CardHeader className="handle flex flex-row items-center justify-between p-3 bg-gray-200/50 cursor-move">
                     <CardTitle className="text-base font-semibold text-gray-800">Notes</CardTitle>
