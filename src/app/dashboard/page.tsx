@@ -7,18 +7,20 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect } from 'react';
+import { useMounted } from '@/hooks/use-mounted';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const mounted = useMounted();
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth');
     }
   }, [user, loading, router]);
-  
-  if (loading || !user) {
+
+  if (!mounted || loading || !user) {
     return <DashboardSkeleton />;
   }
 

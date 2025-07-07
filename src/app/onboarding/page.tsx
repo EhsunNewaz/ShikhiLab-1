@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
+import { useMounted } from '@/hooks/use-mounted';
 
 const onboardingSteps = [
   { id: 1, title: 'Personal Information' },
@@ -39,6 +40,7 @@ const diagnosticQuestions = [
 export default function OnboardingPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const mounted = useMounted();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({ name: '', city: '', ieltsGoalBand: '7.0' });
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
@@ -54,7 +56,7 @@ export default function OnboardingPage() {
     }
   }, [user, loading, router]);
   
-  if (loading || !user) {
+  if (!mounted || loading || !user) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 

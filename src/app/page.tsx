@@ -7,10 +7,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useMounted } from '@/hooks/use-mounted';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const mounted = useMounted();
 
   useEffect(() => {
     if (!loading && user) {
@@ -18,7 +20,7 @@ export default function HomePage() {
     }
   }, [user, loading, router]);
 
-  if (loading || user) {
+  if (!mounted || loading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />

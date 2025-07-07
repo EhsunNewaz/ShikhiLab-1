@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth-hook';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { useMounted } from '@/hooks/use-mounted';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -40,7 +41,9 @@ function NavLink({ href, label, icon: Icon, onLinkClick }: { href: string; label
 
 function UserNav() {
   const { user, loading, logout } = useAuth();
-  if (loading) {
+  const mounted = useMounted();
+
+  if (!mounted || loading) {
     return <div className="h-10 w-10 rounded-full bg-secondary" />;
   }
 
