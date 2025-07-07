@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from './ui/dropdown-menu';
 import { useMounted } from '@/hooks/use-mounted';
 
+// In-app navigation for authenticated users
 const mainNavLinks = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/study-plan', label: 'Study Plan' },
@@ -31,6 +32,7 @@ const secondaryNavLinks = [
     { href: '/mentor', label: 'AI Mentor' },
 ];
 
+// Mobile nav combines all in-app links
 const mobileNavLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/study-plan', label: 'Study Plan', icon: BookOpenText },
@@ -41,6 +43,13 @@ const mobileNavLinks = [
   { href: '/reading', label: 'Reading', icon: BookOpen },
   { href: '/mock-tests', label: 'Mock Tests', icon: ClipboardCheck },
   { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
+];
+
+// Public navigation for the landing page
+const publicNavLinks = [
+  { href: '#features', label: 'Our Method' },
+  { href: '/study-plan', label: 'Courses' },
+  { href: '#pricing', label: 'Pricing' },
 ];
 
 
@@ -109,12 +118,13 @@ function UserNav() {
 
 function DesktopNavLink({ href, label }: { href: string; label: string }) {
     const pathname = usePathname();
-    const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+    const isActive = pathname.startsWith(href) && href.length > 1;
+
     return (
          <Link
             href={href}
             className={cn(
-            'transition-colors hover:text-primary',
+            'transition-colors hover:text-primary text-sm font-medium',
             isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
             )}
         >
@@ -128,6 +138,8 @@ export function AppHeader() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { user } = useAuth();
   
+  const isPublicPage = !user && pathname === '/';
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -174,36 +186,42 @@ export function AppHeader() {
             </svg>
             <span className="font-bold font-headline sm:inline-block">ShikhiLab</span>
           </Link>
-          {user && (
-            <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
-                {mainNavLinks.map(link => (
+          <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
+             {isPublicPage ? (
+                 publicNavLinks.map(link => (
                     <DesktopNavLink key={link.href} {...link} />
-                ))}
+                ))
+            ) : user ? (
+                <>
+                    {mainNavLinks.map(link => (
+                        <DesktopNavLink key={link.href} {...link} />
+                    ))}
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                       <Button variant="ghost" className="px-0 gap-1 text-muted-foreground hover:text-primary focus:text-primary data-[state=open]:text-primary">
-                           IELTS Modules
-                           <ChevronDown className="h-4 w-4" />
-                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        {moduleNavLinks.map(link => (
-                            <DropdownMenuItem key={link.href} asChild>
-                                <Link href={link.href}>
-                                    <link.icon className="mr-2 h-4 w-4" />
-                                    {link.label}
-                                </Link>
-                            </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" className="px-0 gap-1 text-muted-foreground hover:text-primary focus:text-primary data-[state=open]:text-primary">
+                               IELTS Modules
+                               <ChevronDown className="h-4 w-4" />
+                           </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            {moduleNavLinks.map(link => (
+                                <DropdownMenuItem key={link.href} asChild>
+                                    <Link href={link.href}>
+                                        <link.icon className="mr-2 h-4 w-4" />
+                                        {link.label}
+                                    </Link>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
-                {secondaryNavLinks.map(link => (
-                    <DesktopNavLink key={link.href} {...link} />
-                ))}
-            </nav>
-          )}
+                    {secondaryNavLinks.map(link => (
+                        <DesktopNavLink key={link.href} {...link} />
+                    ))}
+                </>
+            ) : null}
+          </nav>
         </div>
         <div className="ml-auto">
           <UserNav />
