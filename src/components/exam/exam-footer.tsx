@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Flag, ArrowUp, ChevronDown, Send } from 'lucide-react';
 
 interface QuestionState {
-  id: number;
+  id: string;
   status: 'unanswered' | 'answered' | 'reviewed';
 }
 
@@ -112,8 +112,8 @@ export function ExamFooter({
     >
       {/* Left Side: Review Button */}
       <Button
-        style={{ width: '80px', height: '40px' }}
-        className="rounded-4px border-none bg-exam-orange text-white hover:bg-exam-orange-hover"
+        style={{ width: 'auto', height: '40px' }}
+        className="rounded-4px border-none bg-exam-orange px-4 text-white hover:bg-exam-orange-hover"
         onClick={onToggleReview}
         disabled={isSubmitted}
       >
@@ -122,7 +122,7 @@ export function ExamFooter({
       </Button>
 
       {/* Center: Navigation */}
-      <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
+      <div className="flex items-center gap-2">
         <Button
           style={{ width: '50px', height: '40px' }}
           className="rounded-4px border-none bg-exam-blue p-0 text-white hover:bg-exam-blue-hover disabled:bg-[#cccccc] disabled:opacity-100"

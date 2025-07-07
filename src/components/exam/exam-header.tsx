@@ -25,7 +25,7 @@ export function ExamHeader({ onTimeUp, onToggleNotes, onToggleHide, onToggleHelp
         </div>
 
         {/* Center: Timer */}
-        <div className="absolute left-1/2 -translate-x-1/2">
+        <div>
           <ExamTimer initialMinutes={40} onTimeUp={onTimeUp} />
         </div>
 
