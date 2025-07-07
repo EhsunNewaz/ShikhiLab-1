@@ -1,5 +1,5 @@
 
-import { BookMarked, Mic, PenSquare, Ear, BookOpen, CheckCircle, XCircle } from 'lucide-react';
+import { BookMarked, Mic, PenSquare, Ear, BookOpen, BookCheck, Repeat } from 'lucide-react';
 
 export type Lesson = {
   id: string;
@@ -38,6 +38,70 @@ export type ReadingTest = {
   passage: string;
   questions: ReadingQuestion[];
 };
+
+export type GrammarLesson = {
+    id: string;
+    title: string;
+    description: string;
+    href: string;
+}
+
+export type PhonicsDrill = {
+    pair: string;
+    audio1Url: string;
+    audio2Url: string;
+}
+
+export type ShadowingExercise = {
+    title: string;
+    audioUrl: string;
+    transcript: string;
+}
+
+export const foundationSkills = {
+    grammar: {
+        title: "Grammar Foundation",
+        description: "Build a strong base with these essential grammar micro-lessons.",
+        icon: BookCheck,
+        href: "/foundation-skills/grammar",
+        lessons: [
+            { id: 'grammar-1', title: 'Tense (কাল)', description: 'Master the use of past, present, and future tenses.', href: '/lessons/grammar-1' },
+            { id: 'grammar-2', title: 'Articles (a, an, the)', description: 'Learn when to use definite and indefinite articles.', href: '/lessons/grammar-2' },
+            { id: 'grammar-3', title: 'Prepositions ( حروف সংযোজন )', description: 'Understand how to use in, on, at, for, since correctly.', href: '/lessons/grammar-3' },
+            { id: 'grammar-4', title: 'Subject-Verb Agreement', description: 'Ensure your subjects and verbs match perfectly.', href: '/lessons/grammar-4' },
+        ] as GrammarLesson[]
+    },
+    listeningLab: {
+        title: "Listening & Pronunciation Lab",
+        description: "Sharpen your listening and speaking clarity with focused drills.",
+        icon: Ear,
+        href: "/foundation-skills/listening-lab",
+        phonicsDrills: [
+            { pair: 'Ship / Sheep', audio1Url: '/audio/placeholder-ship.mp3', audio2Url: '/audio/placeholder-sheep.mp3' },
+            { pair: 'Live / Leave', audio1Url: '/audio/placeholder-live.mp3', audio2Url: '/audio/placeholder-leave.mp3' },
+            { pair: 'Pen / Pan', audio1Url: '/audio/placeholder-pen.mp3', audio2Url: '/audio/placeholder-pan.mp3' },
+        ] as PhonicsDrill[],
+    },
+    fluency: {
+        title: "English Thinking & Fluency",
+        description: "Train your brain to think in English and speak more naturally.",
+        icon: Repeat,
+        href: "/foundation-skills/fluency",
+        shadowingExercises: [
+            {
+                title: "Daily Habits",
+                audioUrl: "/audio/placeholder-shadowing-1.mp3",
+                transcript: "Every morning, I wake up at 7 AM. The first thing I do is drink a glass of water. Then, I spend about fifteen minutes stretching and doing some light exercise. It helps me wake up properly. After that, I take a shower and get dressed for the day. Breakfast is usually simple – just some toast and a cup of tea. I like to read the news on my phone while I eat. Before leaving the house, I always make sure I have my keys, wallet, and phone. My commute to work takes about thirty minutes by bus. During the ride, I often listen to a podcast or some music. It’s a nice way to relax before starting a busy day at the office."
+            },
+            {
+                title: "Ordering Food at a Restaurant",
+                audioUrl: "/audio/placeholder-shadowing-2.mp3",
+                transcript: "Waiter: Hello, welcome! Here are your menus. Can I get you something to drink to start with?\nYou: Yes, I'll have a glass of lemonade, please.\nWaiter: Certainly. Are you ready to order your meal, or do you need a few more minutes?\nYou: I think I'm ready. I'd like to have the grilled chicken salad, please.\nWaiter: Excellent choice. And for you, sir?\nYour Friend: I'll have the vegetable pasta.\nWaiter: Great. So that's one lemonade, one grilled chicken salad, and one vegetable pasta. I'll be right back with your drinks."
+            }
+        ] as ShadowingExercise[]
+    }
+}
+
 
 export const readingTestData: ReadingTest[] = [
   {
