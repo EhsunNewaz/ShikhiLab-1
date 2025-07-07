@@ -68,6 +68,13 @@ export type ShadowingExercise = {
     transcript: string;
 }
 
+export type ActiveListeningExercise = {
+    id: string;
+    title: string;
+    audioUrl: string;
+    transcript: string;
+}
+
 export const foundationSkills = {
     grammar: {
         title: "Grammar Foundation",
@@ -91,6 +98,11 @@ export const foundationSkills = {
             { pair: 'Live / Leave', audio1Url: '/audio/placeholder-live.mp3', audio2Url: '/audio/placeholder-leave.mp3' },
             { pair: 'Pen / Pan', audio1Url: '/audio/placeholder-pen.mp3', audio2Url: '/audio/placeholder-pan.mp3' },
         ] as PhonicsDrill[],
+        activeListeningExercises: [
+            { id: 'al-1', title: 'Simple Statement', audioUrl: '/audio/placeholder-al-1.mp3', transcript: 'The train to London leaves from platform four.' },
+            { id: 'al-2', title: 'Question', audioUrl: '/audio/placeholder-al-2.mp3', transcript: 'Could you please tell me where the nearest post office is?' },
+            { id: 'al-3', title: 'Complex Sentence', audioUrl: '/audio/placeholder-al-3.mp3', transcript: 'Despite the heavy traffic, we managed to arrive at the airport with plenty of time to spare.' }
+        ] as ActiveListeningExercise[],
     },
     fluency: {
         title: "English Thinking & Fluency",

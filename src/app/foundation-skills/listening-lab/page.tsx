@@ -1,11 +1,15 @@
 
+'use client'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { foundationSkills } from '@/lib/course-data';
-import { Badge } from '@/components/ui/badge';
 import { Volume2 } from 'lucide-react';
+import { ActiveListeningTrainer } from './active-listening-trainer';
+import { useMounted } from '@/hooks/use-mounted';
 
 export default function ListeningLabPage() {
-  const { title, description, phonicsDrills, icon: Icon } = foundationSkills.listeningLab;
+  const { title, description, phonicsDrills, icon: Icon, activeListeningExercises } = foundationSkills.listeningLab;
+  const mounted = useMounted();
 
   return (
     <div className="container mx-auto py-6 sm:py-10 max-w-3xl">
@@ -20,6 +24,9 @@ export default function ListeningLabPage() {
       </header>
 
       <main className="space-y-8">
+        
+        {mounted && <ActiveListeningTrainer exercises={activeListeningExercises} />}
+
         <Card>
           <CardHeader>
             <CardTitle>Phonics Drills: Minimal Pairs</CardTitle>
@@ -39,25 +46,6 @@ export default function ListeningLabPage() {
             ))}
              <p className="text-xs text-muted-foreground text-center pt-2">Note: Audio files are placeholders for demonstration purposes.</p>
           </CardContent>
-        </Card>
-
-        <Card className="border-dashed">
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle>Active Listening Trainer</CardTitle>
-                    <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Coming Soon</Badge>
-                </div>
-                <CardDescription>
-                    This upcoming feature will transform how you practice listening, helping you catch every detail.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground">
-                    The Active Listening Trainer will play short audio clips. You will then have to type exactly what you heard. 
-                    The AI will instantly check your transcription, highlight your mistakes, and help you identify the specific sounds and words you struggle with. 
-                    It's a powerful way to train your ear for accuracy.
-                </p>
-            </CardContent>
         </Card>
       </main>
     </div>
