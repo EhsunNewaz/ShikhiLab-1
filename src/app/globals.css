@@ -23,7 +23,8 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 217.2 91.2% 59.8%;
-    --radius: 0.5rem;
+    --radius: 9999px; /* Changed for pill-shaped buttons */
+    --exam-highlight: #ffff00;
   }
 
   .dark {
@@ -57,23 +58,23 @@
   }
 
   /* Exam UI contrast themes */
-  body.theme-contrast-yellow {
-    --background: 54 86% 75%; /* A pleasant yellow */
-    --foreground: 240 10% 3.9%;
-    --card: 54 86% 75%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 54 86% 75%;
-    --popover-foreground: 240 10% 3.9%;
+  body.theme-contrast-yellow { /* Now Yellow on Black */
+    --background: 240 10% 3.9%; /* Black */
+    --foreground: 60 100% 50%; /* Yellow */
+    --card: 240 10% 3.9%;
+    --card-foreground: 60 100% 50%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 60 100% 50%;
     --primary: 217 91% 59%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 47 91% 95%;
-    --secondary-foreground: 240 10% 3.9%;
-    --muted: 47 91% 95%;
-    --muted-foreground: 240 5.9% 10%;
-    --accent: 47 91% 95%;
-    --accent-foreground: 240 5.9% 10%;
-    --border: 47 80% 80%;
-    --input: 47 80% 80%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 60 100% 50%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 60 80% 70%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 60 100% 50%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
   }
@@ -124,7 +125,7 @@
   .timer.critical {
     color: #ff0000;
     background-color: #ffcccc;
-    animation: exam-flash 1s infinite steps(1, end);
+    animation: exam-flash 0.5s infinite steps(1, end);
   }
 }
 
@@ -140,6 +141,7 @@
 
 @layer utilities {
   .text-highlight {
-    @apply bg-exam-highlight;
+    background-color: var(--exam-highlight);
+    border-bottom: 2px solid #ffd700;
   }
 }

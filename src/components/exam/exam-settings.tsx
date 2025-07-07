@@ -14,12 +14,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useMounted } from '@/hooks/use-mounted';
 
-type ContrastOption = 'black-on-white' | 'black-on-yellow' | 'white-on-black';
+type ContrastOption = 'black-on-white' | 'yellow-on-black' | 'white-on-black';
 type TextSizeOption = 'standard' | 'large' | 'extra-large';
 
 const contrastOptions: { value: ContrastOption; label: string; class: string }[] = [
   { value: 'black-on-white', label: 'Black on white', class: '' },
-  { value: 'black-on-yellow', label: 'Black on yellow', class: 'theme-contrast-yellow' },
+  { value: 'yellow-on-black', label: 'Yellow on black', class: 'theme-contrast-yellow' },
   { value: 'white-on-black', label: 'White on black', class: 'theme-contrast-dark' },
 ];
 

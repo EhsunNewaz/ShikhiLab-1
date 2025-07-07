@@ -41,12 +41,12 @@ export function ExamTimer({ initialMinutes = 40, onTimeUp }: TimerProps) {
   );
 
   if (!mounted) {
-    return <div className="text-lg font-bold">{`${String(initialMinutes).padStart(2, '0')}:00`}</div>;
+    return <div className="text-lg font-bold">{`Time Left: ${String(initialMinutes).padStart(2, '0')}:00`}</div>;
   }
 
   return (
     <div className={timerClasses}>
-      {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+      Time Left: {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
     </div>
   );
 }

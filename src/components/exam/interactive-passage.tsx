@@ -3,19 +3,6 @@
 
 import { useState, useMemo, useRef, useEffect, type MouseEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { v4 as uuidv4 } from 'uuid';
-
-// Temporarily add uuid for unique keys until a proper solution is in place
-// In a real app, you would add the 'uuid' and '@types/uuid' packages.
-// For this environment, we'll just use a simple polyfill.
-const DUMMY_UUID = '00000000-0000-0000-0000-000000000000';
-try {
-  // Try to use the real uuid if it somehow exists
-  uuidv4();
-} catch {
-  window.uuidv4 = () => DUMMY_UUID + Math.random();
-}
-
 
 interface Highlight {
   id: string;
@@ -28,6 +15,7 @@ interface ContextMenuState {
   y: number;
   visible: boolean;
   selection: Selection | null;
+  targetHighlightId: string | null;
 }
 
 interface InteractivePassageProps {
@@ -59,7 +47,7 @@ const ContextMenu = ({ x, y, options }: { x: number; y: number; options: { label
 
 export function InteractivePassage({ text }: InteractivePassageProps) {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>({ x: 0, y: 0, visible: false, selection: null });
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({ x: 0, y: 0, visible: false, selection: null, targetHighlightId: null });
   const passageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,8 +59,14 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
   const handleContextMenu = (event: MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
     const selection = window.getSelection();
-    if (selection && selection.toString().trim().length > 0) {
-      setContextMenu({ x: event.pageX, y: event.pageY, visible: true, selection });
+    const targetElement = event.target as HTMLElement;
+    const highlightSpan = targetElement.closest('[data-highlight-id]');
+    const highlightId = highlightSpan ? highlightSpan.getAttribute('data-highlight-id') : null;
+
+    if (highlightId) {
+        setContextMenu({ x: event.pageX, y: event.pageY, visible: true, selection: null, targetHighlightId: highlightId });
+    } else if (selection && selection.toString().trim().length > 0) {
+      setContextMenu({ x: event.pageX, y: event.pageY, visible: true, selection, targetHighlightId: null });
     }
   };
 
@@ -84,24 +78,26 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
     const passageTextNode = passageRef.current.firstChild;
     
     if (!passageTextNode || !passageTextNode.contains(range.startContainer) || !passageTextNode.contains(range.endContainer)) {
-        // Selection is not fully within our passage text node, ignore it.
         return;
     }
 
     const start = range.startOffset;
     const end = range.endOffset;
     
-    // Avoid creating overlapping highlights
     const isOverlapping = highlights.some(h => (start < h.end && end > h.start));
     if (isOverlapping) {
-      // For simplicity, we just ignore overlapping highlights.
-      // A more complex implementation might merge them.
       return;
     }
     
-    setHighlights([...highlights, { id: uuidv4(), start, end }]);
+    setHighlights([...highlights, { id: crypto.randomUUID(), start, end }]);
     setContextMenu(prev => ({...prev, visible: false}));
     selection.removeAllRanges();
+  };
+
+  const clearHighlight = () => {
+    if (!contextMenu.targetHighlightId) return;
+    setHighlights(highlights.filter(h => h.id !== contextMenu.targetHighlightId));
+    setContextMenu(prev => ({ ...prev, visible: false }));
   };
 
   const clearAllHighlights = () => {
@@ -119,20 +115,17 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
     let lastIndex = 0;
 
     sortedHighlights.forEach(highlight => {
-      // Add text before the highlight
       if (highlight.start > lastIndex) {
         parts.push(text.substring(lastIndex, highlight.start));
       }
-      // Add the highlighted text
       parts.push(
-        <span key={highlight.id} className="text-highlight">
+        <span key={highlight.id} className="text-highlight" data-highlight-id={highlight.id}>
           {text.substring(highlight.start, highlight.end)}
         </span>
       );
       lastIndex = highlight.end;
     });
 
-    // Add any remaining text after the last highlight
     if (lastIndex < text.length) {
       parts.push(text.substring(lastIndex));
     }
@@ -140,17 +133,28 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
     return parts;
   }, [text, highlights]);
   
-  const contextMenuOptions = [
-    { label: 'Highlight', action: addHighlight },
-    { label: 'Clear All Highlights', action: clearAllHighlights },
-  ];
+  const contextMenuOptions = useMemo(() => {
+    if (contextMenu.targetHighlightId) {
+        return [
+            { label: 'Clear Highlight', action: clearHighlight },
+            { label: 'Clear All Highlights', action: clearAllHighlights },
+        ]
+    }
+    if (contextMenu.selection && contextMenu.selection.toString().trim().length > 0) {
+        return [
+            { label: 'Highlight', action: addHighlight },
+            { label: 'Clear All Highlights', action: clearAllHighlights },
+        ]
+    }
+    return [];
+  }, [contextMenu, highlights]);
 
   return (
     <div onContextMenu={handleContextMenu}>
       <div ref={passageRef} className="prose dark:prose-invert max-w-none whitespace-pre-wrap font-body text-base">
         {renderedPassage}
       </div>
-      {contextMenu.visible && <ContextMenu x={contextMenu.x} y={contextMenu.y} options={contextMenuOptions} />}
+      {contextMenu.visible && contextMenuOptions.length > 0 && <ContextMenu x={contextMenu.x} y={contextMenu.y} options={contextMenuOptions} />}
     </div>
   );
 }

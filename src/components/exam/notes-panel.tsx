@@ -22,7 +22,7 @@ export function NotesPanel({ isOpen, onClose }: NotesPanelProps) {
         "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 animate-in fade-in-50",
         { "hidden": !isOpen }
     )}>
-        <Card className="w-[350px] bg-[#fffacd] border-gray-400 shadow-2xl">
+        <Card className="w-[300px] bg-[#fffacd] border-gray-400 shadow-2xl">
             <CardHeader className="flex flex-row items-center justify-between p-3 bg-gray-200/50">
                 <CardTitle className="text-base font-semibold text-gray-800">Notes</CardTitle>
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
