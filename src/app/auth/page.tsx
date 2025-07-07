@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,6 +58,17 @@ export default function AuthPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isMockMode, setIsMockMode] = useState(false);
+
+  useEffect(() => {
+    if (!auth?.onAuthStateChanged) {
+      setIsMockMode(true);
+      toast({
+        title: 'Development Mode',
+        description: 'Firebase not configured. Click any login button to proceed with a mock user.',
+      });
+    }
+  }, [toast]);
 
   const {
     register,
@@ -79,26 +91,8 @@ export default function AuthPage() {
     });
   };
 
-  const checkFirebaseConfig = () => {
-    // onAuthStateChanged will be missing if Firebase isn't configured.
-    if (!auth?.onAuthStateChanged) {
-      toast({
-        variant: 'destructive',
-        title: 'Firebase Not Configured',
-        description: 'Using mock user for development. Click any login button to continue.',
-      });
-      return false;
-    }
-    return true;
-  };
-
   const handleEmailSignUp: SubmitHandler<FormValues> = async ({ email, password }) => {
     setIsLoading(true);
-    if (!checkFirebaseConfig()) {
-      // In mock mode, a full page navigation triggers AuthProvider to set the mock user.
-      window.location.assign('/dashboard');
-      return;
-    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await createUserDocument(userCredential.user);
@@ -112,11 +106,6 @@ export default function AuthPage() {
 
   const handleEmailLogin: SubmitHandler<FormValues> = async ({ email, password }) => {
     setIsLoading(true);
-    if (!checkFirebaseConfig()) {
-      // In mock mode, a full page navigation triggers AuthProvider to set the mock user.
-      window.location.assign('/dashboard');
-      return;
-    }
     try {
       await signInWithEmailAndPassword(auth, email, password);
       handleAuthSuccess(false);
@@ -129,11 +118,6 @@ export default function AuthPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    if (!checkFirebaseConfig()) {
-      // In mock mode, a full page navigation triggers AuthProvider to set the mock user.
-      window.location.assign('/dashboard');
-      return;
-    }
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -147,6 +131,16 @@ export default function AuthPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const handleMockAuth = () => {
+    setIsLoading(true);
+    router.push('/dashboard');
+  };
+
+  const handleMockFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleMockAuth();
   };
 
   return (
@@ -162,7 +156,7 @@ export default function AuthPage() {
               <CardTitle>Welcome Back!</CardTitle>
               <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit(handleEmailLogin)}>
+            <form onSubmit={isMockMode ? handleMockFormSubmit : handleSubmit(handleEmailLogin)}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
@@ -180,7 +174,7 @@ export default function AuthPage() {
                   {isLoading && <Loader2 className="animate-spin" />}
                   Login
                 </Button>
-                <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+                <Button variant="outline" type="button" className="w-full" onClick={isMockMode ? handleMockAuth : handleGoogleSignIn} disabled={isLoading}>
                   <GoogleIcon className="mr-2" />
                   Sign in with Google
                 </Button>
@@ -194,7 +188,7 @@ export default function AuthPage() {
               <CardTitle>Create an Account</CardTitle>
               <CardDescription>Start your IELTS journey with ShikhiLab today.</CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit(handleEmailSignUp)}>
+            <form onSubmit={isMockMode ? handleMockFormSubmit : handleSubmit(handleEmailSignUp)}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
@@ -212,7 +206,7 @@ export default function AuthPage() {
                    {isLoading && <Loader2 className="animate-spin" />}
                    Sign Up
                 </Button>
-                <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+                <Button variant="outline" type="button" className="w-full" onClick={isMockMode ? handleMockAuth : handleGoogleSignIn} disabled={isLoading}>
                   <GoogleIcon className="mr-2" />
                   Sign up with Google
                 </Button>
