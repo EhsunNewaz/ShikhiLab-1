@@ -85,7 +85,7 @@ export default function AuthPage() {
       toast({
         variant: 'destructive',
         title: 'Firebase Not Configured',
-        description: 'Please ensure your Firebase credentials are set up correctly in the .env file.',
+        description: 'Using mock user for development. Click any login button to continue.',
       });
       return false;
     }
@@ -95,7 +95,8 @@ export default function AuthPage() {
   const handleEmailSignUp: SubmitHandler<FormValues> = async ({ email, password }) => {
     setIsLoading(true);
     if (!checkFirebaseConfig()) {
-      setIsLoading(false);
+      // In mock mode, a full page navigation triggers AuthProvider to set the mock user.
+      window.location.assign('/dashboard');
       return;
     }
     try {
@@ -112,7 +113,8 @@ export default function AuthPage() {
   const handleEmailLogin: SubmitHandler<FormValues> = async ({ email, password }) => {
     setIsLoading(true);
     if (!checkFirebaseConfig()) {
-      setIsLoading(false);
+      // In mock mode, a full page navigation triggers AuthProvider to set the mock user.
+      window.location.assign('/dashboard');
       return;
     }
     try {
@@ -128,7 +130,8 @@ export default function AuthPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     if (!checkFirebaseConfig()) {
-      setIsLoading(false);
+      // In mock mode, a full page navigation triggers AuthProvider to set the mock user.
+      window.location.assign('/dashboard');
       return;
     }
     try {
