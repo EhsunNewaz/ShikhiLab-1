@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config();
 
@@ -9,3 +10,4 @@ import '@/ai/flows/get-thinking-prompt.ts';
 import '@/ai/flows/get-thinking-feedback.ts';
 import '@/ai/flows/get-speaking-feedback.ts';
 import '@/ai/flows/get-comprehensive-speaking-feedback.ts';
+import '@/ai/flows/get-pronunciation-feedback.ts';

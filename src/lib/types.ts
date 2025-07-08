@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 /**
@@ -187,4 +188,26 @@ export interface ComprehensiveSpeakingFeedback {
   grammaticalRangeAndAccuracyScore: number;
   grammaticalRangeAndAccuracyFeedback: string;
   overallBandScore: number;
+}
+
+// Pronunciation Lab Types
+export interface WordIssue {
+  word: string;
+  issue: string;
+}
+
+export interface Linking {
+  wordIndexes: number[];
+}
+
+export interface Pause {
+  afterWordIndex: number;
+  strength: 'short' | 'long';
+}
+
+export interface PronunciationAnalysis {
+  wordIssues: WordIssue[];
+  linkingOpportunities: Linking[];
+  pauses: Pause[];
+  overallFeedback: string;
 }
