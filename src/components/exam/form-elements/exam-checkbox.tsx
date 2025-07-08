@@ -11,7 +11,7 @@ const ExamCheckbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> & { label: string, passageProps: PassageProps }
 >(({ className, label, passageProps, ...props }, ref) => (
-  <label className="flex items-center gap-2 font-exam text-sm cursor-pointer select-none">
+  <label className="flex w-full items-center gap-2 font-exam text-sm cursor-pointer select-none">
     <CheckboxPrimitive.Root
         ref={ref}
         style={{ width: '16px', height: '16px' }}

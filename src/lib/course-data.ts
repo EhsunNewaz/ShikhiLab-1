@@ -4,10 +4,12 @@ import { BookMarked, Mic, PenSquare, Ear, BookOpen, BookCheck, Repeat, Clipboard
 export type SubQuestion = {
     id: string;
     text: string;
+    preText?: string;
+    postText?: string;
 }
 
 export type ReadingQuestion = {
-  id: string; // For single questions, this is the number. For grouped questions, it's a range like "14-18".
+  id: string; // For single questions, this is the number. For grouped questions, it's a range like "1-4".
   passage: number;
   type: 'fill-in-the-blank' | 'multiple-choice' | 'multiple-answer' | 'true-false-not-given' | 'yes-no-not-given' | 'matching-headings';
   instruction: string;
@@ -15,11 +17,11 @@ export type ReadingQuestion = {
   questionText?: string; 
   options?: string[];
   requiredAnswers?: number; // For multiple-answer
-  // For matching questions
+  // For matching/grouped questions
   matchingOptions?: string[]; // The list of headings/options to match from
-  subQuestions?: SubQuestion[]; // The list of statements to match
+  subQuestions?: SubQuestion[]; // The list of statements/gaps to handle
   // For all questions
-  correctAnswer: any; // string for single, string[] for multi-answer, Record<string, string> for matching
+  correctAnswer: any; // string for single, Record<string, string> for grouped
   explanation: string;
 };
 
@@ -149,8 +151,8 @@ Socially, the internet has fostered the growth of virtual communities, connectin
         
         `Passage 2: The Science of Urban Planning.
 A) Urban planning is a technical and political process concerned with the development and design of land use and the built environment. It involves forecasting population growth, planning for infrastructure like transportation and utilities, and zoning areas for different types of development such as residential, commercial, and industrial. The primary goal of urban planning is to create functional, sustainable, and aesthetically pleasing communities for people to live, work, and play in.
-B) One of the key challenges in modern urban planning is sustainability. As cities continue to grow, they consume vast amounts of resources and generate significant pollution. Planners are increasingly focused on creating 'green cities' that incorporate renewable energy sources, efficient public transportation systems, and ample green spaces like parks and gardens.
-C) Mixed-use development, where residential, commercial, and recreational spaces are integrated, is another popular strategy. This approach reduces the need for long commutes, thereby decreasing traffic congestion and carbon emissions. It fosters a sense of community by making neighborhoods more walkable and vibrant.
+B) One of the key challenges in modern urban planning is sustainability. As cities continue to grow, they consume vast amounts of resources and generate significant pollution. Planners are increasingly focused on creating 'green cities' that incorporate renewable energy sources, efficient public transportation systems, and ample green spaces like parks and gardens. This approach aims to minimize the environmental impact of urban areas and improve the well-being of their inhabitants.
+C) Mixed-use development, where residential, commercial, and recreational spaces are integrated, is another popular strategy. This approach reduces the need for long commutes, thereby decreasing traffic congestion and carbon emissions. It fosters a sense of community by making neighborhoods more walkable and vibrant. By bringing daily necessities closer to home, it encourages a lifestyle that is less dependent on automobiles.
 D) Furthermore, preserving historical architecture and cultural heritage while accommodating new growth is a delicate balancing act that requires careful consideration and community involvement. Public consultations and stakeholder engagement are crucial to ensure that development projects reflect the values and needs of the residents. Effective urban planning is essential for managing the complexities of urban life and ensuring a high quality of life for all citizens.`,
 
         `Passage 3: The Enigma of Honeybee Navigation.
@@ -158,65 +160,45 @@ Honeybees possess a remarkable ability to navigate the landscape, find flowers, 
 Beyond the waggle dance, bees also rely on a combination of other cues. They have an internal 'sun compass' that allows them to track the sun's position in the sky, even on cloudy days, by detecting patterns of polarized light. They also create and memorize mental maps of their surroundings, using landmarks like trees, rivers, and buildings to orient themselves. This cognitive mapping ability suggests a level of spatial awareness previously thought to be exclusive to larger-brained animals. Recent studies even indicate that bees might be sensitive to the Earth's magnetic field, using it as an additional navigational aid. The honeybee's brain, though no bigger than a sesame seed, integrates these multiple streams of information to create a robust and flexible navigation system.`
     ],
     questions: [
-        // Passage 1
+        // Passage 1: Questions 1-5
         {
-            id: '1',
-            passage: 1,
-            type: 'multiple-choice',
-            instruction: 'Choose the correct letter, A, B, C or D.',
-            questionText: 'What is the main topic of the first paragraph?',
-            options: [ 'The history of postal services', 'The drawbacks of modern technology', 'The evolution of communication technologies', 'The rise of e-commerce'],
-            correctAnswer: 'The evolution of communication technologies',
-            explanation: 'The paragraph introduces the "revolution in communication technologies" and details the shift from older methods to the internet and mobile devices.'
-        },
-        {
-            id: '2',
+            id: '1-4',
             passage: 1,
             type: 'true-false-not-given',
-            instruction: 'Do the following statements agree with the information given in the passage? Choose TRUE, FALSE or NOT GIVEN.',
-            questionText: 'The internet made long-distance communication possible for the first time.',
+            instruction: 'Do the following statements agree with the information given in Reading Passage 1?',
+            subQuestions: [
+                { id: '1', text: 'Communication was much faster before the digital era.' },
+                { id: '2', text: 'E-commerce allows businesses to operate without physical locations in every market.' },
+                { id: '3', text: 'The internet has had a universally positive impact on personal relationships.' },
+                { id: '4', text: 'The use of social media is the biggest challenge of the digital age.' },
+            ],
             options: ['TRUE', 'FALSE', 'NOT GIVEN'],
-            correctAnswer: 'FALSE',
-            explanation: 'The passage states that before the internet, long-distance communication relied on "postal services and telephones," meaning it was already possible, just slower.'
-        },
-        {
-            id: '3',
-            passage: 1,
-            type: 'true-false-not-given',
-            instruction: 'Do the following statements agree with the information given in the passage? Choose TRUE, FALSE or NOT GIVEN.',
-            questionText: 'E-commerce has been beneficial for businesses.',
-            options: ['TRUE', 'FALSE', 'NOT GIVEN'],
-            correctAnswer: 'TRUE',
-            explanation: 'The passage explicitly states that "e-commerce has flourished, allowing businesses to reach a global customer base".'
-        },
-        {
-            id: '4',
-            passage: 1,
-            type: 'true-false-not-given',
-            instruction: 'Do the following statements agree with the information given in the passage? Choose TRUE, FALSE or NOT GIVEN.',
-            questionText: 'The number of virtual communities has declined in recent years.',
-            options: ['TRUE', 'FALSE', 'NOT GIVEN'],
-            correctAnswer: 'NOT GIVEN',
-            explanation: 'The passage mentions the "growth of virtual communities" but does not provide any information about whether this number has declined recently.'
+            correctAnswer: {
+                '1': 'FALSE',
+                '2': 'TRUE',
+                '3': 'FALSE',
+                '4': 'NOT GIVEN'
+            },
+            explanation: '1: False - passage says it was "slower". 2: True - passage says "without the need for physical storefronts in every region". 3: False - passage mentions drawbacks and challenges. 4: Not Given - it is mentioned as a challenge, but not stated as the "biggest".'
         },
         {
             id: '5',
             passage: 1,
             type: 'multiple-answer',
-            instruction: 'Choose TWO letters, A-E. Which TWO of the following are mentioned as drawbacks of hyper-connectivity?',
-            questionText: '',
+            instruction: 'Choose TWO letters, A-E.',
+            questionText: 'Which TWO of the following are mentioned as drawbacks of hyper-connectivity?',
             options: ['Economic inequality', 'Loss of privacy', 'Decline in literacy', 'Spread of false information', 'Reduced battery life'],
             correctAnswer: ['Loss of privacy', 'Spread of false information'],
             requiredAnswers: 2,
             explanation: 'The passage lists "Concerns about privacy" and "the spread of misinformation" as significant challenges.'
         },
 
-        // Passage 2
+        // Passage 2: Questions 6-12
         {
             id: '6-9',
             passage: 2,
             type: 'matching-headings',
-            instruction: 'The reading passage has four paragraphs, A-D. Choose the correct heading for each paragraph from the list of headings below.',
+            instruction: 'Reading Passage 2 has four paragraphs, A-D. Choose the correct heading for each paragraph from the list of headings below.',
             matchingOptions: [
                 'i. The benefits of integrating different city functions',
                 'ii. The need for resident participation',
@@ -239,45 +221,55 @@ Beyond the waggle dance, bees also rely on a combination of other cues. They hav
             explanation: 'Each heading correctly summarizes the main idea of the corresponding paragraph.'
         },
         {
-            id: '10',
+            id: '10-12',
             passage: 2,
             type: 'fill-in-the-blank',
-            instruction: 'Complete the sentence below. Use NO MORE THAN TWO WORDS from the passage for each answer.',
-            questionText: 'A key challenge for modern planners is ___ .',
-            correctAnswer: 'sustainability',
-            explanation: 'The passage states, "One of the key challenges in modern urban planning is sustainability."'
+            instruction: 'Complete the sentences below. Write NO MORE THAN TWO WORDS from the passage for each answer.',
+            subQuestions: [
+                { id: '10', preText: 'A key challenge for modern planners is achieving environmental ', postText: '.' },
+                { id: '11', preText: 'Mixed-use development helps to reduce ', postText: ' by decreasing the need for long commutes.' },
+                { id: '12', preText: 'To ensure development projects meet residents\' needs, ', postText: ' is crucial.' },
+            ],
+            correctAnswer: {
+                '10': 'sustainability',
+                '11': 'traffic congestion',
+                '12': 'community involvement',
+            },
+            explanation: '10: Passage B mentions "key challenges... is sustainability". 11: Passage C states this approach reduces "traffic congestion". 12: Passage D states "community involvement" is crucial.'
         },
+
+        // Passage 3: Questions 13-15
         {
-            id: '11',
-            passage: 2,
-            type: 'yes-no-not-given',
-            instruction: 'Do the following statements agree with the views of the writer in the passage? Choose YES, NO or NOT GIVEN.',
-            questionText: 'Mixed-use development is the only effective strategy for green cities.',
-            options: ['YES', 'NO', 'NOT GIVEN'],
-            correctAnswer: 'NO',
-            explanation: 'The passage calls mixed-use development "another popular strategy," implying it is one of several, not the only one.'
-        },
-        {
-            id: '12',
-            passage: 2,
-            type: 'yes-no-not-given',
-            instruction: 'Do the following statements agree with the views of the writer in the passage? Choose YES, NO or NOT GIVEN.',
-            questionText: 'Community involvement is important for development projects.',
-            options: ['YES', 'NO', 'NOT GIVEN'],
-            correctAnswer: 'YES',
-            explanation: 'The passage states that community involvement is "crucial to ensure that development projects reflect the values and needs of the residents."'
-        },
-        // Placeholder to reach 40 questions
-        ...Array.from({ length: 28 }, (_, i) => ({
-             id: `${13 + i}`,
+            id: '13',
             passage: 3,
             type: 'multiple-choice',
             instruction: 'Choose the correct letter, A, B, C or D.',
-            questionText: `Placeholder question ${13 + i} for Passage 3.`,
-            options: [ 'Option A', 'Option B', 'Option C', 'Option D'],
-            correctAnswer: 'Option A',
-            explanation: 'This is a placeholder explanation.'
-        }))
+            questionText: 'What was the main finding of Karl von Frisch?',
+            options: [
+                'That honeybees use the Earth’s magnetic field.',
+                'That honeybees can create mental maps.',
+                'That honeybees communicate through a special dance.',
+                'That honeybees can see polarized light.'
+            ],
+            correctAnswer: 'That honeybees communicate through a special dance.',
+            explanation: 'The passage credits the "pioneering research of Karl von Frisch" with revealing the "waggle dance".'
+        },
+        {
+            id: '14-15',
+            passage: 3,
+            type: 'yes-no-not-given',
+            instruction: 'Do the following statements agree with the claims of the writer in Reading Passage 3?',
+            subQuestions: [
+                 { id: '14', text: 'The waggle dance is the only method honeybees use for navigation.' },
+                 { id: '15', text: 'Honeybees\' brains are surprisingly complex for their size.' }
+            ],
+            options: ['YES', 'NO', 'NOT GIVEN'],
+            correctAnswer: {
+                '14': 'NO',
+                '15': 'YES'
+            },
+            explanation: '14: No - the passage says "Beyond the waggle dance, bees also rely on a combination of other cues." 15: Yes - the passage describes their brain integrating multiple streams of information to create a "robust and flexible navigation system."'
+        },
     ]
   },
 ];
