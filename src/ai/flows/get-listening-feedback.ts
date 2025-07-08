@@ -12,13 +12,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GetListeningFeedbackInputSchema = z.object({
+const GetListeningFeedbackInputSchema = z.object({
   originalTranscript: z.string().describe("The correct, original transcript of the audio."),
   userTranscript: z.string().describe("The transcript written by the user."),
 });
 export type GetListeningFeedbackInput = z.infer<typeof GetListeningFeedbackInputSchema>;
 
-export const GetListeningFeedbackOutputSchema = z.object({
+const GetListeningFeedbackOutputSchema = z.object({
   feedback: z.string().describe("Encouraging feedback in simple Bangla about the user's accuracy."),
   highlightedTranscript: z.string().describe("The user's transcript with any incorrect words wrapped in single asterisks. E.g., 'I *leve* here.'"),
   isCorrect: z.boolean().describe("Whether the user's transcript was perfectly correct."),
