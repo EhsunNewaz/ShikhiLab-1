@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { ChevronDown } from 'lucide-react';
 
 // Get the mock reading test for demonstration
 const readingTest = readingTestData[0];
@@ -297,18 +297,22 @@ function QuestionRenderer({
   }
 }
 
-// The right-hand panel containing the questions
+// The right-hand panel containing the questions, now using an accordion style
 function QuestionPanel({
   questionGroup,
   answers,
   onAnswerChange,
   isSubmitted,
+  activeQuestionId,
+  onSetActiveQuestion,
   ...passageProps
 }: {
   questionGroup: ReadingQuestionData[];
   answers: Record<string, any>;
   onAnswerChange: (questionId: string, value: any) => void;
   isSubmitted: boolean;
+  activeQuestionId: string | null;
+  onSetActiveQuestion: (id: string | null) => void;
   annotations: Annotation[];
   setAnnotations: (annotations: Annotation[]) => void;
   scrollToAnnotationId: string | null;
@@ -322,50 +326,74 @@ function QuestionPanel({
   const lastQuestion = questionGroup[questionGroup.length - 1];
 
   let questionRangeText = '';
+  if (questionGroup.length > 1) {
+    const firstId = parseInt(firstQuestion.id.split('-')[0]);
+    let lastIdNum = parseInt(lastQuestion.id.split('-')[0]);
 
-    if (questionGroup.length > 1) {
-        const firstId = parseInt(firstQuestion.id.split('-')[0]);
-        let lastIdNum = parseInt(lastQuestion.id.split('-')[0]);
-
-        if (lastQuestion.subQuestions && lastQuestion.subQuestions.length > 0) {
-           lastIdNum = parseInt(lastQuestion.subQuestions[lastQuestion.subQuestions.length -1].id);
-        } else if (lastQuestion.id.includes('-')) {
-            lastIdNum = parseInt(lastQuestion.id.split('-')[1]);
-        }
-        
-        questionRangeText = `Questions ${firstId}-${lastIdNum}`;
-
-    } else if (firstQuestion.subQuestions) {
-        const subQs = firstQuestion.subQuestions;
-        questionRangeText = `Questions ${subQs[0].id}-${subQs[subQs.length-1].id}`
-    } else {
-        questionRangeText = `Question ${firstQuestion.id}`;
+    if (lastQuestion.subQuestions && lastQuestion.subQuestions.length > 0) {
+        lastIdNum = parseInt(lastQuestion.subQuestions[lastQuestion.subQuestions.length -1].id);
+    } else if (lastQuestion.id.includes('-')) {
+        lastIdNum = parseInt(lastQuestion.id.split('-')[1]);
     }
+    
+    questionRangeText = `Questions ${firstId}-${lastIdNum}`;
+  } else if (firstQuestion.subQuestions) {
+      const subQs = firstQuestion.subQuestions;
+      questionRangeText = `Questions ${subQs[0].id}-${subQs[subQs.length-1].id}`
+  } else {
+      questionRangeText = `Question ${firstQuestion.id}`;
+  }
 
+  const getQuestionTitle = (question: ReadingQuestionData) => {
+    if (question.subQuestions && question.subQuestions.length > 0) {
+      const subQs = question.subQuestions;
+      return `Questions ${subQs[0].id}-${subQs[subQs.length - 1].id}`;
+    }
+    const idParts = question.id.split('-');
+    if (idParts.length > 1 && !isNaN(parseInt(idParts[0])) && !isNaN(parseInt(idParts[1]))) {
+      return `Questions ${idParts[0]}-${idParts[1]}`;
+    }
+    return `Question ${question.id}`;
+  };
 
   return (
-    <Card className="font-exam">
-      <CardHeader>
-        <CardTitle>{questionRangeText}</CardTitle>
-        <CardDescription>
+    <div className="font-exam bg-gray-50/50">
+      <div className="p-4 border-b">
+        <h2 className="font-bold text-lg">{questionRangeText}</h2>
+        <p className="text-sm text-gray-600 mt-1">
           <InteractivePassage id={`instruction-${firstQuestion.id}`} text={firstQuestion.instruction} {...passageProps} />
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {questionGroup.map((question, index) => (
-          <div key={question.id}>
-            <QuestionRenderer
-              question={question}
-              answer={answers[question.id]}
-              onAnswerChange={onAnswerChange}
-              isSubmitted={isSubmitted}
-              {...passageProps}
-            />
-            {index < questionGroup.length - 1 && <Separator className="mt-6" />}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+        </p>
+      </div>
+      <div className="space-y-1 p-2">
+        {questionGroup.map((question) => {
+          const isActive = activeQuestionId === question.id;
+          return (
+            <div key={question.id} className="border bg-white rounded-md overflow-hidden shadow-sm">
+              <button
+                className="w-full text-left p-3 flex justify-between items-center hover:bg-gray-50 disabled:cursor-not-allowed"
+                onClick={() => onSetActiveQuestion(isActive ? null : question.id)}
+                disabled={isSubmitted}
+                aria-expanded={isActive}
+              >
+                <span className="font-semibold text-gray-800">{getQuestionTitle(question)}</span>
+                <ChevronDown className={cn("h-5 w-5 transition-transform text-gray-500", isActive && "rotate-180")} />
+              </button>
+              {isActive && (
+                <div className="p-4 border-t border-gray-200">
+                  <QuestionRenderer
+                    question={question}
+                    answer={answers[question.id]}
+                    onAnswerChange={onAnswerChange}
+                    isSubmitted={isSubmitted}
+                    {...passageProps}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -380,16 +408,13 @@ export default function MockTestPage() {
   const answerStorageKey = `answers_${readingTest.id}`;
   const annotationStorageKey = `annotations_${readingTest.id}`;
 
-  // State for the exam answers
   const [answers, setAnswers] = useState<Record<string, any>>({});
-  
-  // State for annotations (highlights and notes)
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [scrollToAnnotationId, setScrollToAnnotationId] = useState<string | null>(null);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
 
 
-  // On the client, after the initial render, load answers and annotations from localStorage
   useEffect(() => {
     try {
       const savedAnswers = window.localStorage.getItem(answerStorageKey);
@@ -403,7 +428,6 @@ export default function MockTestPage() {
     }
   }, [answerStorageKey, annotationStorageKey]);
   
-  // Effect to save answers to localStorage whenever they change
   useEffect(() => {
     if (!isSubmitted) {
         try {
@@ -414,7 +438,6 @@ export default function MockTestPage() {
     }
   }, [answers, answerStorageKey, isSubmitted]);
 
-  // Effect to save annotations to localStorage whenever they change
   useEffect(() => {
     try {
       window.localStorage.setItem(annotationStorageKey, JSON.stringify(annotations));
@@ -436,7 +459,7 @@ export default function MockTestPage() {
         let isAnswered = false;
         if (q.subQuestions) {
             const answeredCount = q.subQuestions.filter(subQ => !!answers[q.id]?.[subQ.id]).length;
-            isAnswered = answeredCount > 0; // Consider answered if at least one sub-question is answered
+            isAnswered = answeredCount > 0;
         } else {
              isAnswered = (Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : !!answers[q.id]);
         }
@@ -488,10 +511,7 @@ export default function MockTestPage() {
     setScore(calculatedScore);
     setIsSubmitted(true);
     window.localStorage.removeItem(answerStorageKey);
-    // Keep annotations after submission for review
-    // window.localStorage.removeItem(annotationStorageKey);
-
-    // If user is logged in, save the result to Firestore
+  
     if (user && db?.app) {
       const userRef = doc(db, 'users', user.uid);
       const newResult = {
@@ -572,9 +592,7 @@ export default function MockTestPage() {
     return <div>Loading test...</div>
   }
   
-  // --- Group questions for display ---
   const currentQuestion = initialQuestions[currentQuestionIndex];
-  // This logic now supports grouping by type as well as instruction
   let groupStartIndex = currentQuestionIndex;
   while (
     groupStartIndex > 0 &&
@@ -584,7 +602,6 @@ export default function MockTestPage() {
   ) {
     groupStartIndex--;
   }
-  // Find the end of the group
   let groupEndIndex = currentQuestionIndex;
   while (
     groupEndIndex < initialQuestions.length - 1 &&
@@ -595,6 +612,17 @@ export default function MockTestPage() {
     groupEndIndex++;
   }
   const currentQuestionGroup = initialQuestions.slice(groupStartIndex, groupEndIndex + 1);
+
+  // When the group of questions on screen changes, automatically expand the first one.
+  useEffect(() => {
+    if (currentQuestionGroup.length > 0) {
+      const currentGroupIds = new Set(currentQuestionGroup.map(q => q.id));
+      if (!activeQuestionId || !currentGroupIds.has(activeQuestionId)) {
+        setActiveQuestionId(currentQuestionGroup[0].id);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestionGroup]);
 
 
   return (
@@ -609,7 +637,6 @@ export default function MockTestPage() {
             onPrev={handlePrev}
             onNext={handleNext}
             onToggleReview={handleToggleReview}
-            // Props for the Notes Panel
             isNotesOpen={isNotesOpen}
             onToggleNotes={() => setIsNotesOpen(prev => !prev)}
             annotations={annotations}
@@ -631,13 +658,15 @@ export default function MockTestPage() {
             rightPanel={
               <>
                 <ScrollArea className="h-full">
-                    <div className="space-y-6 p-5 pb-48"> {/* Padding at bottom for floating buttons */}
+                    <div className="pb-48"> {/* Padding at bottom for floating buttons */}
                         {isSubmitted && <ResultsCard score={score} total={totalQuestions} />}
                         <QuestionPanel
                             questionGroup={currentQuestionGroup}
                             answers={answers}
                             onAnswerChange={handleAnswerChange}
                             isSubmitted={isSubmitted}
+                            activeQuestionId={activeQuestionId}
+                            onSetActiveQuestion={setActiveQuestionId}
                             {...passageProps}
                         />
                     </div>
@@ -654,5 +683,3 @@ export default function MockTestPage() {
     </>
   );
 }
-
-    
