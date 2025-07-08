@@ -250,18 +250,21 @@ export default function MockTestPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const storageKey = `answers_${readingTest.id}`;
-  const [answers, setAnswers] = useState<Record<string, any>>(() => {
-    if (typeof window === 'undefined') {
-      return {};
-    }
+
+  // Initialize with an empty object on both server and client
+  const [answers, setAnswers] = useState<Record<string, any>>({});
+
+  // On the client, after the initial render, load answers from localStorage
+  useEffect(() => {
     try {
       const savedAnswers = window.localStorage.getItem(storageKey);
-      return savedAnswers ? JSON.parse(savedAnswers) : {};
+      if (savedAnswers) {
+        setAnswers(JSON.parse(savedAnswers));
+      }
     } catch (error) {
       console.error("Error reading from localStorage", error);
-      return {};
     }
-  });
+  }, [storageKey]);
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -403,6 +406,8 @@ export default function MockTestPage() {
         <ExamShell
             onTimeUp={handleTimeUp}
             isSubmitted={isSubmitted}
+            onSubmit={() => setShowSubmitDialog(true)}
+            onToggleReview={handleToggleReview}
         >
             <SplitScreenLayout
             leftPanel={
@@ -435,8 +440,6 @@ export default function MockTestPage() {
                 isSubmitted={isSubmitted}
                 onNext={handleNext}
                 onPrev={handlePrev}
-                onReview={handleToggleReview}
-                onSubmit={() => setShowSubmitDialog(true)}
             />
         </ExamShell>
         <SubmitConfirmationDialog 
