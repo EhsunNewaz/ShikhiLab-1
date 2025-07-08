@@ -56,6 +56,107 @@ function ResultsCard({ score, total }: { score: number; total: number }) {
   );
 }
 
+function TrueFalseNotGivenRenderer({
+    question,
+    answers,
+    onAnswerChange,
+    isSubmitted,
+    ...passageProps
+}: {
+    question: ReadingQuestionData;
+    answers: Record<string, any>;
+    onAnswerChange: (questionId: string, subQuestionId: string, value: any) => void;
+    isSubmitted: boolean;
+    annotations: Annotation[];
+    setAnnotations: (annotations: Annotation[]) => void;
+    scrollToAnnotationId: string | null;
+    onScrollComplete: () => void;
+}) {
+    const [activeSubQuestionId, setActiveSubQuestionId] = useState<string>(question.subQuestions![0].id);
+
+    const activeSubQuestionAnswer = answers[question.id]?.[activeSubQuestionId] || '';
+
+    const handleAnswerSelect = (value: string) => {
+        onAnswerChange(question.id, activeSubQuestionId, value);
+    };
+    
+    const renderFeedback = (subQuestionId: string) => {
+        if (!isSubmitted) return null;
+        
+        const userAnswer = answers[question.id]?.[subQuestionId];
+        const correctAnswer = question.correctAnswer[subQuestionId];
+        const isCorrect = userAnswer === correctAnswer;
+        
+        return (
+          <div className={cn("p-2 text-sm rounded-md", isCorrect ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")}>
+            <p>
+              Your answer: <span className="font-semibold">{userAnswer || 'No Answer'}</span>. 
+              Correct answer: <span className="font-semibold">{correctAnswer}</span>.
+            </p>
+          </div>
+        );
+    };
+
+    return (
+        <div className="space-y-2">
+            <div className="space-y-2">
+                {question.subQuestions!.map(subQ => {
+                    const isSubQuestionActive = activeSubQuestionId === subQ.id;
+                    const userAnswer = answers[question.id]?.[subQ.id];
+                    
+                    return (
+                        <div key={subQ.id}>
+                            <button
+                                onClick={() => !isSubmitted && setActiveSubQuestionId(subQ.id)}
+                                disabled={isSubmitted}
+                                className={cn(
+                                    "w-full text-left p-3 rounded-md border transition-colors",
+                                    isSubQuestionActive && !isSubmitted ? "bg-blue-50 border-blue-500" : "bg-gray-50 border-gray-200",
+                                    !isSubmitted && "hover:bg-blue-50/50"
+                                )}
+                            >
+                                <div className="flex justify-between items-center">
+                                    <p className="flex-1">
+                                        <span className="font-bold mr-2">{subQ.id}.</span>
+                                        <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="span" {...passageProps} />
+                                    </p>
+                                    {isSubmitted && (
+                                         <Badge className={cn(userAnswer === question.correctAnswer[subQ.id] ? "bg-green-500" : "bg-destructive")}>
+                                             {userAnswer || 'N/A'}
+                                         </Badge>
+                                    )}
+                                </div>
+                            </button>
+                            {isSubmitted && renderFeedback(subQ.id)}
+                        </div>
+                    );
+                })}
+            </div>
+            
+            <div className="pt-4">
+                 <ExamRadioGroup
+                    value={activeSubQuestionAnswer}
+                    onValueChange={handleAnswerSelect}
+                    disabled={isSubmitted}
+                    className="flex flex-col gap-3"
+                >
+                    {question.options!.map(opt => (
+                        <ExamRadioGroupItem 
+                            key={opt}
+                            value={opt} 
+                            id={`${activeSubQuestionId}-${opt}`} 
+                            label={opt} 
+                            disabled={isSubmitted} 
+                            passageProps={passageProps}
+                            variant='default'
+                        />
+                    ))}
+                </ExamRadioGroup>
+            </div>
+        </div>
+    );
+}
+
 
 // Component to render a single question based on its type
 function QuestionRenderer({
@@ -179,44 +280,13 @@ function QuestionRenderer({
         );
     case 'true-false-not-given':
     case 'yes-no-not-given':
-        return (
-             <div className="space-y-4">
-                 {question.subQuestions?.map(subQ => {
-                     const userAnswer = answers[question.id]?.[subQ.id] || '';
-                     const correctAnswer = question.correctAnswer[subQ.id];
-                     const isCorrect = isSubmitted && userAnswer === correctAnswer;
-                     return (
-                         <div key={subQ.id} className="space-y-2 border-b pb-4 last:border-b-0">
-                             <div className="font-semibold">
-                                 <span className="font-bold mr-2">{subQ.id}.</span>
-                                 <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} {...passageProps} />
-                             </div>
-                             <ExamRadioGroup
-                                 value={userAnswer}
-                                 onValueChange={(value) => handleSubQuestionChange(subQ.id, value)}
-                                 disabled={isSubmitted}
-                                 className="flex items-center gap-2"
-                             >
-                                {question.options!.map(opt => (
-                                     <ExamRadioGroupItem 
-                                         key={opt}
-                                         value={opt} 
-                                         id={`${subQ.id}-${opt}`} 
-                                         label={opt} 
-                                         disabled={isSubmitted} 
-                                         passageProps={passageProps}
-                                         variant='button'
-                                         isCorrect={isSubmitted && correctAnswer === opt}
-                                         isSelected={userAnswer === opt}
-                                     />
-                                ))}
-                             </ExamRadioGroup>
-                              {isSubmitted && renderFeedback(subQ.id, isCorrect, correctAnswer, question.explanation)}
-                         </div>
-                     )
-                 })}
-             </div>
-        );
+        return <TrueFalseNotGivenRenderer
+            question={question}
+            answers={answers}
+            onAnswerChange={onAnswerChange}
+            isSubmitted={isSubmitted}
+            {...passageProps}
+        />;
     case 'multiple-answer':
         const userAnswerMA = answers[question.id]?.[question.id] || [];
         const selectedCount = userAnswerMA.length;
@@ -247,9 +317,9 @@ function QuestionRenderer({
                     return (
                         <div key={opt} className={cn(
                             "flex items-center space-x-2 p-3 rounded-lg border",
+                            !isSubmitted && "bg-background",
                             isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
-                            isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500",
-                            !isSubmitted && "bg-background"
+                            isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500"
                         )}>
                             <ExamCheckbox
                                 id={`${question.id}-${opt}`}
@@ -333,35 +403,48 @@ function QuestionPanel({
   onScrollComplete: () => void;
 }) {
 
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(questions[0]?.id || null);
+
+  const handleToggle = (questionId: string) => {
+    setActiveQuestionId(prevId => prevId === questionId ? null : questionId);
+  }
+
   return (
     <div className="font-exam bg-gray-50/50">
-        <Accordion type="single" collapsible defaultValue={questions[0]?.id} className="w-full">
+        <div className="w-full">
             {questions.map((question) => {
                 const firstSubId = question.subQuestions ? question.subQuestions[0].id : question.id;
                 const lastSubId = question.subQuestions ? question.subQuestions[question.subQuestions.length -1].id : question.id;
                 const questionRangeText = firstSubId === lastSubId ? `Question ${firstSubId}` : `Questions ${firstSubId}-${lastSubId}`;
+                const isActive = activeQuestionId === question.id;
                 
                 return (
-                     <AccordionItem value={question.id} key={question.id} className="border-b">
-                        <AccordionTrigger className="p-4 text-left hover:bg-gray-100 disabled:cursor-not-allowed text-base font-semibold text-gray-800">
+                     <div key={question.id} className="border-b">
+                        <button 
+                            className="w-full p-4 text-left hover:bg-gray-100 disabled:cursor-not-allowed text-base font-semibold text-gray-800"
+                            onClick={() => handleToggle(question.id)}
+                            disabled={isSubmitted}
+                        >
                            {questionRangeText}
-                        </AccordionTrigger>
-                        <AccordionContent className="p-4 border-t border-gray-200">
-                             <div className="text-sm text-gray-600 mb-4">
-                               <InteractivePassage id={`instruction-${question.id}`} text={question.instruction} {...passageProps} as="div" />
-                             </div>
-                             <QuestionRenderer
-                                question={question}
-                                answers={answers}
-                                onAnswerChange={onAnswerChange}
-                                isSubmitted={isSubmitted}
-                                {...passageProps}
-                             />
-                        </AccordionContent>
-                    </AccordionItem>
+                        </button>
+                        {isActive && (
+                            <div className="p-4 border-t border-gray-200">
+                                <div className="text-sm text-gray-600 mb-4">
+                                    <InteractivePassage id={`instruction-${question.id}`} text={question.instruction} {...passageProps} as="div" />
+                                </div>
+                                <QuestionRenderer
+                                    question={question}
+                                    answers={answers}
+                                    onAnswerChange={onAnswerChange}
+                                    isSubmitted={isSubmitted}
+                                    {...passageProps}
+                                />
+                            </div>
+                        )}
+                    </div>
                 )
             })}
-        </Accordion>
+        </div>
     </div>
   );
 }
@@ -422,6 +505,9 @@ export default function MockTestPage() {
         if (q.subQuestions) {
             return acc + q.subQuestions.length;
         }
+        if (q.type === 'multiple-answer') {
+            return acc + 1; // Count as one scorable item
+        }
         return acc + 1;
     }, 0);
   }, []);
@@ -459,7 +545,7 @@ export default function MockTestPage() {
     }));
   };
   
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     setShowSubmitDialog(false);
     if (isSubmitted) return;
     
@@ -518,15 +604,14 @@ export default function MockTestPage() {
         });
       }
     }
-  }
+  }, [answers, isSubmitted, readingTest.id, totalQuestions, user, toast]);
 
   const handleTimeUp = useCallback(() => {
     if (!isSubmitted) {
         console.log('Time is up! Submitting test.');
         handleSubmit();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSubmitted]);
+  }, [isSubmitted, handleSubmit]);
   
   const handleSelectQuestion = (index: number) => {
       setCurrentQuestionIndex(index);

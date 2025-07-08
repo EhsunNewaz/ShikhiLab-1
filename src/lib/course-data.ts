@@ -145,9 +145,7 @@ export const readingTestData: ReadingTest[] = [
     id: 'full-mock-test-1',
     title: 'IELTS Academic Reading Test 1',
     passages: [
-        `Passage 1: The Revolution in Communication.
-The late 20th century witnessed a revolution in communication technologies that has reshaped human interaction on a global scale. The advent of the internet, followed by the proliferation of mobile devices, has created an ecosystem of constant connectivity. Before this digital era, long-distance communication was primarily reliant on postal services and telephones, which were slower and less immediate. The internet dismantled these barriers, enabling real-time conversations across continents through email, instant messaging, and later, video calls. This shift has had profound effects on social structures, economies, and personal relationships.
-Socially, the internet has fostered the growth of virtual communities, connecting individuals with shared interests regardless of their geographical location. Economically, e-commerce has flourished, allowing businesses to reach a global customer base without the need for physical storefronts in every region. Personal relationships have also been transformed; families and friends can maintain close contact despite living thousands of miles apart. However, this hyper-connectivity is not without its drawbacks. Concerns about privacy, the spread of misinformation, and the impact of social media on mental health are significant challenges that society must navigate in this new digital landscape. The very definition of 'community' and 'friendship' is being redefined by these powerful tools.`,
+        `Passage 1: Marie Curie was a Polish and naturalized-French physicist and chemist who conducted pioneering research on radioactivity. She was the first woman to win a Nobel Prize, the first person and only woman to win the Nobel Prize twice, and the only person to win the Nobel Prize in two different scientific fields. Her husband, Pierre Curie, was a co-winner of her first Nobel Prize, making them the first-ever married couple to win the Nobel Prize. She was a co-winner on her second Nobel prize as well. Marie Curie's achievements included the development of the theory of radioactivity, techniques for isolating radioactive isotopes, and the discovery of two elements, polonium and radium. Under her direction, the world's first studies were conducted into the treatment of neoplasms, using radioactive isotopes. She founded the Curie Institutes in Paris and in Warsaw, which remain major centres of medical research today.`,
         
         `Passage 2: The Science of Urban Planning.
 A) Urban planning is a technical and political process concerned with the development and design of land use and the built environment. It involves forecasting population growth, planning for infrastructure like transportation and utilities, and zoning areas for different types of development such as residential, commercial, and industrial. The primary goal of urban planning is to create functional, sustainable, and aesthetically pleasing communities for people to live, work, and play in.
@@ -162,35 +160,48 @@ Beyond the waggle dance, bees also rely on a combination of other cues. They hav
     questions: [
         // Passage 1: Questions 1-5
         {
-            id: '1-4',
+            id: '1-3',
             passage: 1,
             type: 'true-false-not-given',
-            instruction: 'Do the following statements agree with the information given in Reading Passage 1?',
+            instruction: 'Choose TRUE if the statement agrees with the information given in the text, choose FALSE if the statement contradicts the information, or choose NOT GIVEN if there is no information on this.',
             subQuestions: [
-                { id: '1', text: 'Communication was much faster before the digital era.' },
-                { id: '2', text: 'E-commerce allows businesses to operate without physical locations in every market.' },
-                { id: '3', text: 'The internet has had a universally positive impact on personal relationships.' },
-                { id: '4', text: 'The use of social media is the biggest challenge of the digital age.' },
+                { id: '1', text: "Marie Curie's husband was a joint winner of both Marie's Nobel Prizes." },
+                { id: '2', text: 'Marie became interested in science when she was a child.' },
+                { id: '3', text: 'Marie was able to attend the Sorbonne because of her sister’s financial contribution.' },
             ],
             options: ['TRUE', 'FALSE', 'NOT GIVEN'],
             correctAnswer: {
                 '1': 'FALSE',
-                '2': 'TRUE',
-                '3': 'FALSE',
-                '4': 'NOT GIVEN'
+                '2': 'NOT GIVEN',
+                '3': 'NOT GIVEN',
             },
-            explanation: '1: False - passage says it was "slower". 2: True - passage says "without the need for physical storefronts in every region". 3: False - passage mentions drawbacks and challenges. 4: Not Given - it is mentioned as a challenge, but not stated as the "biggest".'
+            explanation: "1: The passage says Pierre was a co-winner of her *first* Nobel Prize, not both. 2 & 3: The passage does not mention her childhood interest or her sister's contribution."
+        },
+        {
+            id: '4',
+            passage: 1,
+            type: 'multiple-choice',
+            instruction: 'Choose the correct letter, A, B, C or D.',
+            questionText: 'What was a key achievement of Marie Curie mentioned in the passage?',
+            options: [
+                'Inventing the telephone',
+                'Developing the theory of radioactivity',
+                'Discovering the law of gravity',
+                'Founding the first university for women'
+            ],
+            correctAnswer: 'Developing the theory of radioactivity',
+            explanation: 'The passage explicitly states "Marie Curie\'s achievements included the development of the theory of radioactivity..."'
         },
         {
             id: '5',
             passage: 1,
             type: 'multiple-answer',
             instruction: 'Choose TWO letters, A-E.',
-            questionText: 'Which TWO of the following are mentioned as drawbacks of hyper-connectivity?',
-            options: ['Economic inequality', 'Loss of privacy', 'Decline in literacy', 'Spread of false information', 'Reduced battery life'],
-            correctAnswer: ['Loss of privacy', 'Spread of false information'],
+            questionText: 'Which TWO of the following did Marie Curie discover?',
+            options: ['X-rays', 'Polonium', 'Neutrons', 'Radium', 'Electrons'],
+            correctAnswer: ['Polonium', 'Radium'],
             requiredAnswers: 2,
-            explanation: 'The passage lists "Concerns about privacy" and "the spread of misinformation" as significant challenges.'
+            explanation: 'The passage mentions "...and the discovery of two elements, polonium and radium."'
         },
 
         // Passage 2: Questions 6-12
@@ -354,5 +365,3 @@ export const getNextLesson = () => {
     }
     return null;
 }
-
-    

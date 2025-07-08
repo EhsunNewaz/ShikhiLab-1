@@ -67,13 +67,12 @@ const ExamRadioGroupItem = React.forwardRef<
                 "hover:border-exam-green",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 "disabled:cursor-not-allowed disabled:opacity-50",
-                "data-[state=checked]:bg-exam-green data-[state=checked]:border-exam-green data-[state=checked]:border-2",
-                className
+                "data-[state=checked]:bg-white data-[state=checked]:border-exam-green data-[state=checked]:border-2"
             )}
             {...props}
         >
             <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-                {/* The background color change serves as the indicator */}
+                 <div className="h-2.5 w-2.5 rounded-full bg-exam-green" />
             </RadioGroupPrimitive.Indicator>
         </RadioGroupPrimitive.Item>
         <InteractivePassage text={label} as="span" id={`radio-label-${props.id}`} {...passageProps}/>
