@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect, type MouseEvent, type ReactNode } from 'react';
@@ -141,7 +140,8 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ x: 0, y: 0, visible: false, type: 'selection' });
   const [notesPanel, setNotesPanel] = useState<NotesPanelState>({ visible: false, annotationId: '', noteText: ''});
-  const passageRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null); // Ref for the main container
+  const passageRef = useRef<HTMLDivElement>(null); // Ref for the text container
   const { toast } = useToast();
   
   const storageKey = `passage-annotations-${id}`;
@@ -188,7 +188,10 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
     
     const range = selection.getRangeAt(0);
-    if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null;
+    // Ensure the selection is within our passageRef container
+    if (!passageRef.current || !passageRef.current.contains(range.startContainer) || !passageRef.current.contains(range.endContainer)) {
+        return null;
+    }
 
     let startOffset = 0;
     const preSelectionRange = document.createRange();
@@ -206,6 +209,11 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
   const handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();
     hideAllPopups();
+    
+    const rootContainer = rootRef.current;
+    if (!rootContainer) return;
+
+    const rootRect = rootContainer.getBoundingClientRect();
 
     const target = e.target as HTMLElement;
     const annotationElement = target.closest('[data-annotation-id]');
@@ -215,8 +223,8 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
         const rect = annotationElement.getBoundingClientRect();
         setContextMenu({
             visible: true,
-            x: rect.left + window.scrollX,
-            y: rect.bottom + window.scrollY + 5,
+            x: rect.left - rootRect.left,
+            y: rect.bottom - rootRect.top + 5,
             type: 'annotation',
             annotationId: annotationId,
         });
@@ -240,8 +248,8 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
 
     setContextMenu({
         visible: true,
-        x: rect.left + window.scrollX,
-        y: rect.bottom + window.scrollY + 5,
+        x: rect.left - rootRect.left,
+        y: rect.bottom - rootRect.top + 5,
         type: 'selection',
         selection: offsets,
     });
@@ -324,7 +332,7 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
 
 
   return (
-    <div onContextMenu={handleContextMenu} className="relative" data-interactive-passage="true">
+    <div ref={rootRef} onContextMenu={handleContextMenu} className="relative" data-interactive-passage="true">
       <Comp ref={passageRef} className={cn("whitespace-pre-wrap select-text", className)}>
         {renderedPassage}
       </Comp>
