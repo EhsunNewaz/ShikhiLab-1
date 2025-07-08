@@ -4,16 +4,20 @@
 import { ExamTimer } from './exam-timer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth-hook';
-import { Settings, HelpCircle, EyeOff } from 'lucide-react';
+import { Settings, HelpCircle, EyeOff, Wifi, Bell, Menu, FileText } from 'lucide-react';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 interface ExamHeaderProps {
     onTimeUp: () => void;
+    onSubmit: () => void;
     onToggleSettings: () => void;
     onToggleHelp: () => void;
     onToggleHide: () => void;
+    onToggleNotes: () => void;
 }
 
-export function ExamHeader({ onTimeUp, onToggleHelp, onToggleSettings, onToggleHide }: ExamHeaderProps) {
+export function ExamHeader({ onTimeUp, onSubmit, onToggleHelp, onToggleSettings, onToggleHide, onToggleNotes }: ExamHeaderProps) {
     const { user, loading } = useAuth();
     const candidateNumber = user?.uid.substring(0, 8).toUpperCase() || 'N/A';
 
@@ -36,18 +40,51 @@ export function ExamHeader({ onTimeUp, onToggleHelp, onToggleSettings, onToggleH
         
         {/* Right Side: Controls */}
         <div className="flex items-center justify-end gap-1 text-sm">
-             <Button variant="ghost" className="h-9 w-auto px-3 gap-2 text-gray-600 hover:bg-gray-200/50 hover:text-gray-900" onClick={onToggleSettings}>
-                <Settings className="h-5 w-5"/>
-                <span>Settings</span>
+            <Button onClick={onSubmit} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Finish test
             </Button>
-            <Button variant="ghost" className="h-9 w-auto px-3 gap-2 text-gray-600 hover:bg-gray-200/50 hover:text-gray-900" onClick={onToggleHelp}>
-                <HelpCircle className="h-5 w-5"/>
-                <span>Help</span>
-            </Button>
-             <Button variant="ghost" className="h-9 w-auto px-3 gap-2 text-gray-600 hover:bg-gray-200/50 hover:text-gray-900" onClick={onToggleHide}>
-                <EyeOff className="h-5 w-5"/>
-                <span>Hide</span>
-            </Button>
+             
+            <TooltipProvider>
+                <div className="flex items-center gap-1 ml-4">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon"><Wifi /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Connection Status</p></TooltipContent>
+                    </Tooltip>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon"><Bell /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Notifications</p></TooltipContent>
+                    </Tooltip>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" onClick={onToggleNotes}><FileText /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Notes</p></TooltipContent>
+                    </Tooltip>
+                    <div className="h-6 w-px bg-gray-300 mx-2"></div>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" onClick={onToggleHelp}><HelpCircle /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Help</p></TooltipContent>
+                    </Tooltip>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" onClick={onToggleSettings}><Settings /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Settings</p></TooltipContent>
+                    </Tooltip>
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" onClick={onToggleHide}><EyeOff /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Hide Screen</p></TooltipContent>
+                    </Tooltip>
+                </div>
+            </TooltipProvider>
         </div>
       </header>
     );

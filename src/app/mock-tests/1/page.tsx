@@ -246,6 +246,7 @@ export default function MockTestPage() {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [score, setScore] = useState(0);
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<string>>(new Set());
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -408,6 +409,8 @@ export default function MockTestPage() {
             isSubmitted={isSubmitted}
             onSubmit={() => setShowSubmitDialog(true)}
             onToggleReview={handleToggleReview}
+            onToggleNotes={() => setIsNotesOpen(prev => !prev)}
+            isNotesOpen={isNotesOpen}
         >
             <SplitScreenLayout
             leftPanel={
@@ -440,6 +443,7 @@ export default function MockTestPage() {
                 isSubmitted={isSubmitted}
                 onNext={handleNext}
                 onPrev={handlePrev}
+                onReview={handleToggleReview}
             />
         </ExamShell>
         <SubmitConfirmationDialog 

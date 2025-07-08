@@ -9,11 +9,16 @@ import { InactivityWarningDialog } from './inactivity-warning-dialog';
 import { HelpDialog } from './help-dialog';
 import { ExamSettings } from './exam-settings';
 import { Button } from '../ui/button';
+import { NotesPanel } from './notes-panel';
 
 interface ExamShellProps {
   children: ReactNode;
   onTimeUp: () => void;
+  onSubmit: () => void;
   isSubmitted: boolean;
+  onToggleReview: () => void;
+  onToggleNotes: () => void;
+  isNotesOpen: boolean;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -21,7 +26,10 @@ const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 export function ExamShell({
   children,
   onTimeUp,
+  onSubmit,
   isSubmitted,
+  onToggleNotes,
+  isNotesOpen,
 }: ExamShellProps) {
   const [isScreenHidden, setIsScreenHidden] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
@@ -98,15 +106,19 @@ export function ExamShell({
     >
       <ExamHeader
         onTimeUp={onTimeUp}
+        onSubmit={onSubmit}
         onToggleHelp={() => setIsHelpOpen(true)}
         onToggleSettings={() => setIsSettingsOpen(true)}
         onToggleHide={() => setIsScreenHidden(true)}
+        onToggleNotes={onToggleNotes}
       />
 
       {/* Main Content Area - with padding for header and footer */}
       <main className="h-full bg-white pt-[60px] pb-[120px]">
         {children}
       </main>
+      
+      <NotesPanel isOpen={isNotesOpen} onClose={onToggleNotes} />
 
       {isScreenHidden && (
           <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-4">
