@@ -2,7 +2,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ExamHeader } from './exam-header';
 import { cn } from '@/lib/utils';
 import { InactivityWarningDialog } from './inactivity-warning-dialog';
