@@ -129,7 +129,7 @@ export default function ReadingPracticePage() {
                                 onValueChange={(value) => handleAnswerChange(q.id, value)}
                                 disabled={isSubmitted}
                             >
-                                {q.options.map((option) => {
+                                {q.options?.map((option) => {
                                     const isCorrect = option === q.correctAnswer;
                                     const isSelected = answers[q.id] === option;
                                     return (
