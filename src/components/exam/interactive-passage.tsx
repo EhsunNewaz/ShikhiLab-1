@@ -21,6 +21,13 @@ interface PopupState {
   visible: boolean;
 }
 
+interface RemovePopupState {
+  x: number;
+  y: number;
+  visible: boolean;
+  highlightId: string | null;
+}
+
 interface InteractivePassageProps {
   text: string;
   as?: React.ElementType;
@@ -55,10 +62,34 @@ const SelectionPopup = ({
   );
 };
 
+const RemoveHighlightPopup = ({
+  x,
+  y,
+  onRemove,
+}: {
+  x: number;
+  y: number;
+  onRemove: () => void;
+}) => {
+  return (
+    <div
+      className="absolute z-50 flex items-center rounded-md shadow-lg bg-[#2C3E50] text-white font-sans"
+      style={{ top: y, left: x, transform: 'translateX(-50%)' }}
+      data-popup="true"
+    >
+      <button onClick={onRemove} className="px-4 py-2 text-sm hover:bg-black/20 rounded-md">
+        Remove highlight
+      </button>
+    </div>
+  );
+};
+
+
 export function InteractivePassage({ text, as: Comp = 'div', className }: InteractivePassageProps) {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [tempHighlight, setTempHighlight] = useState<TempHighlight | null>(null);
   const [popup, setPopup] = useState<PopupState>({ x: 0, y: 0, visible: false });
+  const [removePopup, setRemovePopup] = useState<RemovePopupState>({ x: 0, y: 0, visible: false, highlightId: null });
   const passageRef = useRef<HTMLDivElement>(null);
 
   // Combines permanent and temporary highlights for rendering
@@ -70,20 +101,40 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
     return annotations.sort((a, b) => a.start - b.start);
   }, [highlights, tempHighlight]);
 
-  // Hide popup on any outside click
+  // Hide popups on any outside click or Esc key
   useEffect(() => {
     const handleClickOutside = (event: globalThis.MouseEvent) => {
-      if (popup.visible) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('[data-popup="true"]')) {
-          setPopup(prev => ({ ...prev, visible: false }));
-          setTempHighlight(null);
+      const target = event.target as HTMLElement;
+       // If the click is not on a popup or a highlighted area, hide all popups.
+      if (!target.closest('[data-popup="true"]') && !target.closest('[data-highlight-id]')) {
+        if (popup.visible) {
+            setPopup(prev => ({ ...prev, visible: false }));
+            setTempHighlight(null);
+        }
+        if (removePopup.visible) {
+            setRemovePopup({ x: 0, y: 0, visible: false, highlightId: null });
         }
       }
     };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (popup.visible) {
+            setPopup(prev => ({ ...prev, visible: false }));
+            setTempHighlight(null);
+        }
+        if (removePopup.visible) {
+            setRemovePopup({ x: 0, y: 0, visible: false, highlightId: null });
+        }
+      }
+    };
+    
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [popup.visible]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [popup.visible, removePopup.visible]);
 
   const getSelectionOffsets = (container: HTMLElement) => {
     const selection = window.getSelection();
@@ -99,7 +150,6 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
     let node;
     while ((node = walker.nextNode())) {
-        const nodeLength = node.textContent?.length || 0;
         if (startOffset === -1 && node === range.startContainer) {
             startOffset = accumulatedLength + range.startOffset;
         }
@@ -107,7 +157,7 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
             endOffset = accumulatedLength + range.endOffset;
             break;
         }
-        accumulatedLength += nodeLength;
+        accumulatedLength += node.textContent?.length || 0;
     }
     
     if (startOffset !== -1 && endOffset !== -1) {
@@ -120,6 +170,12 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
     if (!passageRef.current) return;
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        return;
+    }
+    
+    // Do not show selection popup if clicking inside an existing highlight
+    if ((selection.anchorNode?.parentElement as HTMLElement)?.dataset.highlightId) {
+        selection.removeAllRanges();
         return;
     }
 
@@ -138,6 +194,7 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
         x: rect.left - containerRect.left + rect.width / 2,
         y: rect.top - containerRect.top - 45, // Position above selection
     });
+    setRemovePopup({ x: 0, y: 0, visible: false, highlightId: null }); // Hide remove popup
     setTempHighlight(offsets);
     selection.removeAllRanges();
   };
@@ -154,7 +211,6 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
 
   const handleNote = () => {
      if (!tempHighlight) return;
-     console.log('Note action for text range:', tempHighlight);
      // For now, we'll just make it a highlight as well
      handlePermanentHighlight();
   };
@@ -183,7 +239,20 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
             'bg-green-300/70': annotation.type === 'temporary',
           })}
           data-highlight-id={annotation.id}
-          onClick={() => annotation.type === 'permanent' && clearHighlight(annotation.id)}
+          onClick={(e: MouseEvent<HTMLSpanElement>) => {
+            if (annotation.type === 'permanent') {
+              e.stopPropagation();
+              const rect = (e.target as HTMLElement).getBoundingClientRect();
+              const containerRect = passageRef.current!.getBoundingClientRect();
+              setPopup({ visible: false, x: 0, y: 0 }); // Hide the other popup
+              setRemovePopup({
+                visible: true,
+                x: rect.left - containerRect.left + rect.width / 2,
+                y: rect.top - containerRect.top - 45, // Position above
+                highlightId: annotation.id,
+              });
+            }
+          }}
         >
           {text.substring(annotation.start, annotation.end)}
         </span>
@@ -196,6 +265,7 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
     }
     
     return parts;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, allAnnotations]);
 
   return (
@@ -213,6 +283,16 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
             y={popup.y}
             onHighlight={handlePermanentHighlight}
             onNote={handleNote}
+        />
+      )}
+       {removePopup.visible && removePopup.highlightId && (
+        <RemoveHighlightPopup
+          x={removePopup.x}
+          y={removePopup.y}
+          onRemove={() => {
+            clearHighlight(removePopup.highlightId!);
+            setRemovePopup({ x: 0, y: 0, visible: false, highlightId: null });
+          }}
         />
       )}
     </div>
