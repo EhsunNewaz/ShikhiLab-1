@@ -356,32 +356,6 @@ export default function MockTestPage() {
       setCurrentQuestionIndex(index);
   };
 
-  const handleNextQuestion = () => {
-      setCurrentQuestionIndex((prev) => Math.min(prev + 1, questions.length - 1));
-  };
-
-  const handlePrevQuestion = () => {
-      setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0));
-  };
-
-  const handleToggleReview = () => {
-    if (isSubmitted) return;
-    setQuestions((prev) => {
-        const newQuestions = [...prev];
-        const currentQuestion = newQuestions[currentQuestionIndex];
-        
-        if (currentQuestion.status === 'reviewed') {
-          const isAnswered = Array.isArray(answers[currentQuestion.id])
-            ? answers[currentQuestion.id].length > 0
-            : !!answers[currentQuestion.id];
-          currentQuestion.status = isAnswered ? 'answered' : 'unanswered';
-        } else {
-          currentQuestion.status = 'reviewed';
-        }
-        return newQuestions;
-      });
-  };
-
   const currentPassageIndex = questions[currentQuestionIndex]?.passage - 1;
 
   if (currentPassageIndex === undefined) {
@@ -417,9 +391,6 @@ export default function MockTestPage() {
             onTimeUp={handleTimeUp}
             isSubmitted={isSubmitted}
             onSubmit={() => setShowSubmitDialog(true)}
-            onNext={handleNextQuestion}
-            onPrev={handlePrevQuestion}
-            onToggleReview={handleToggleReview}
         >
             <SplitScreenLayout
             leftPanel={

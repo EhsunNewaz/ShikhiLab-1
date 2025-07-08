@@ -2,52 +2,44 @@
 'use client';
 
 import { ExamTimer } from './exam-timer';
-import { ExamSettings } from './exam-settings';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, Send, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Wifi, Bell, AlignJustify, FileEdit } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth-hook';
 
 interface ExamHeaderProps {
     onTimeUp: () => void;
     onSubmit: () => void;
     isSubmitted: boolean;
-    onPrev: () => void;
-    onNext: () => void;
-    onToggleReview: () => void;
+    onToggleNotes: () => void;
 }
 
-export function ExamHeader({ onTimeUp, onSubmit, isSubmitted, onPrev, onNext, onToggleReview }: ExamHeaderProps) {
+export function ExamHeader({ onTimeUp, onSubmit, isSubmitted, onToggleNotes }: ExamHeaderProps) {
+    const { user, loading } = useAuth();
+
     return (
-      <header className="fixed top-0 left-0 right-0 z-30 flex h-[60px] items-center justify-between border-b-2 border-exam-border bg-white px-6 text-exam-text font-exam shadow-sm">
-        {/* Left Side: Navigation & Review */}
-        <div className="flex items-center gap-2">
-           <Button variant="outline" size="icon" onClick={onPrev} aria-label="Previous Question">
-                <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={onNext} aria-label="Next Question">
-                <ChevronRight className="h-5 w-5" />
-            </Button>
-             <Button variant="outline" onClick={onToggleReview} disabled={isSubmitted} className="gap-2 ml-4">
-                <Flag className="h-4 w-4"/>
-                Review
-            </Button>
+      <header className="fixed top-0 left-0 right-0 z-30 flex h-[60px] items-center justify-between border-b bg-rose-100 px-6 font-exam text-rose-900 shadow-sm">
+        {/* Left Side: User and Timer */}
+        <div className="flex flex-col">
+           <h1 className="font-bold">{loading ? 'Loading...' : (user?.name || 'Test Taker')}</h1>
+           <ExamTimer initialMinutes={60} onTimeUp={onTimeUp} />
         </div>
         
-        {/* Center: Timer */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <ExamTimer initialMinutes={60} onTimeUp={onTimeUp} />
-        </div>
-
         {/* Right Side: Controls */}
-        <div className="flex items-center justify-end gap-1 text-sm">
-            <ExamSettings />
-            <Button variant="ghost" size="icon">
-                <HelpCircle className="h-5 w-5"/>
+        <div className="flex items-center justify-end gap-2 text-sm">
+            <Button className="h-8 rounded-md border-rose-900/50 text-rose-900 hover:bg-rose-200" variant="outline" onClick={onSubmit} disabled={isSubmitted}>
+                Finish test
             </Button>
-            <Separator orientation="vertical" className="mx-1 h-6 bg-gray-300" />
-            <Button className="gap-2 rounded-md bg-green-600 text-white hover:bg-green-700" onClick={onSubmit} disabled={isSubmitted}>
-                <span>Submit</span>
-                <Send className="h-4 w-4"/>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-rose-200/50">
+                <Wifi className="h-5 w-5"/>
+            </Button>
+             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-rose-200/50">
+                <Bell className="h-5 w-5"/>
+            </Button>
+             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-rose-200/50">
+                <AlignJustify className="h-5 w-5"/>
+            </Button>
+             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-rose-200/50" onClick={onToggleNotes}>
+                <FileEdit className="h-5 w-5"/>
             </Button>
         </div>
       </header>
