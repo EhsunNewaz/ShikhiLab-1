@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BottomPanel } from '@/components/exam/bottom-panel';
+import { Separator } from '@/components/ui/separator';
 
 // Get the mock reading test for demonstration
 const readingTest = readingTestData[0];
@@ -192,37 +193,50 @@ function QuestionRenderer({
 }
 
 // The right-hand panel containing the questions
-function QuestionPanel({ 
-    questions, 
-    answers,
-    currentQuestionIndex, 
-    onAnswerChange,
-    isSubmitted
-}: { 
-    questions: QuestionState[], 
-    answers: Record<string, any>,
-    currentQuestionIndex: number, 
-    onAnswerChange: (questionId: string, value: any) => void,
-    isSubmitted: boolean
+function QuestionPanel({
+  questionGroup,
+  answers,
+  onAnswerChange,
+  isSubmitted,
+}: {
+  questionGroup: QuestionState[];
+  answers: Record<string, any>;
+  onAnswerChange: (questionId: string, value: any) => void;
+  isSubmitted: boolean;
 }) {
-  const currentQuestion = questions[currentQuestionIndex];
-  
+  if (!questionGroup || questionGroup.length === 0) {
+    return null;
+  }
+  const firstQuestion = questionGroup[0];
+  const lastQuestion = questionGroup[questionGroup.length - 1];
+  const questionRange =
+    questionGroup.length > 1
+      ? `Questions ${firstQuestion.id} - ${lastQuestion.id}`
+      : `Question ${firstQuestion.id}`;
+
   return (
     <Card className="font-exam">
-        <CardHeader>
-            <CardTitle>Question {currentQuestion.id}</CardTitle>
-            <CardDescription><InteractivePassage text={currentQuestion.instruction} /></CardDescription>
-        </CardHeader>
-        <CardContent>
+      <CardHeader>
+        <CardTitle>{questionRange}</CardTitle>
+        <CardDescription>
+          <InteractivePassage text={firstQuestion.instruction} />
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {questionGroup.map((question, index) => (
+          <div key={question.id}>
             <QuestionRenderer
-              question={currentQuestion}
-              answer={answers[currentQuestion.id]}
+              question={question}
+              answer={answers[question.id]}
               onAnswerChange={onAnswerChange}
               isSubmitted={isSubmitted}
             />
-        </CardContent>
-     </Card>
-  )
+            {index < questionGroup.length - 1 && <Separator className="mt-6" />}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function MockTestPage() {
@@ -373,6 +387,29 @@ export default function MockTestPage() {
   if (currentPassageIndex === undefined) {
     return <div>Loading test...</div>
   }
+  
+  // --- Group questions for display ---
+  const currentQuestion = questions[currentQuestionIndex];
+  // Find the start of the consecutive group of questions with the same instruction
+  let groupStartIndex = currentQuestionIndex;
+  while (
+    groupStartIndex > 0 &&
+    questions[groupStartIndex - 1].instruction === currentQuestion.instruction &&
+    questions[groupStartIndex - 1].passage === currentQuestion.passage
+  ) {
+    groupStartIndex--;
+  }
+  // Find the end of the group
+  let groupEndIndex = currentQuestionIndex;
+  while (
+    groupEndIndex < questions.length - 1 &&
+    questions[groupEndIndex + 1].instruction === currentQuestion.instruction &&
+    questions[groupEndIndex + 1].passage === currentQuestion.passage
+  ) {
+    groupEndIndex++;
+  }
+  const currentQuestionGroup = questions.slice(groupStartIndex, groupEndIndex + 1);
+
 
   return (
     <>
@@ -398,9 +435,8 @@ export default function MockTestPage() {
                     <div className="space-y-6 p-5 pb-24"> {/* Padding at bottom for floating buttons */}
                         {isSubmitted && <ResultsCard score={score} total={questions.length} />}
                         <QuestionPanel
-                            questions={questions}
+                            questionGroup={currentQuestionGroup}
                             answers={answers}
-                            currentQuestionIndex={currentQuestionIndex}
                             onAnswerChange={handleAnswerChange}
                             isSubmitted={isSubmitted}
                         />
