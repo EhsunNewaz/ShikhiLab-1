@@ -33,12 +33,12 @@ export function ExamTimer({ initialMinutes = 60, onTimeUp }: TimerProps) {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  const minutesDisplay = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  const minutesDisplay = `${minutes} minute${minutes !== 1 ? 's' : ''} remaining`;
   const tooltipDisplay = `${String(minutes).padStart(2, '0')}:${String(
     seconds
   ).padStart(2, '0')} remaining`;
   
-  const initialDisplay = `${initialMinutes} minutes`;
+  const initialDisplay = `${initialMinutes} minutes remaining`;
 
   return (
     <TooltipProvider>
