@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, Flag } from 'lucide-react';
@@ -52,9 +51,17 @@ export function BottomPanel({
   isSubmitted
 }: BottomPanelProps) {
 
+  // Guard against rendering before questions are available
+  if (!questions || questions.length === 0) {
+    return null;
+  }
+  
   const currentPart = getPartFromQuestionIndex(currentQuestionIndex);
   
-  const answeredCount = (part: number) => getQuestionsForPart(questions, part).filter(q => q.status === 'answered').length;
+  const answeredCount = (part: number) => {
+    const partQuestions = getQuestionsForPart(questions, part);
+    return partQuestions.filter(q => q.status === 'answered').length;
+  }
   const totalInPart = (part: number) => getQuestionsForPart(questions, part).length;
 
   return (
@@ -62,7 +69,7 @@ export function BottomPanel({
         <div className="flex justify-between items-stretch">
             {/* Question Palette */}
             <div className="flex-grow">
-                 <Accordion type="single" collapsible className="w-full" value={`part-${currentPart}`}>
+                 <Accordion type="single" collapsible className="w-full" defaultValue={`part-${currentPart}`}>
                     {[1, 2, 3].map(partNumber => {
                         const isCurrentPart = partNumber === currentPart;
                         const partQuestions = getQuestionsForPart(questions, partNumber);

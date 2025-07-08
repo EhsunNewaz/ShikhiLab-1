@@ -24,15 +24,12 @@ interface ExamShellProps {
   onTimeUp: () => void;
   onSubmit: () => void;
   isSubmitted: boolean;
-  onToggleReview: () => void;
-  onToggleNotes: () => void;
-  isNotesOpen: boolean;
-  // For BottomPanel
   questions: QuestionState[];
   currentQuestionIndex: number;
   onSelectQuestion: (index: number) => void;
   onPrev: () => void;
   onNext: () => void;
+  onToggleReview: () => void;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -42,19 +39,18 @@ export function ExamShell({
   onTimeUp,
   onSubmit,
   isSubmitted,
-  onToggleReview,
-  onToggleNotes,
-  isNotesOpen,
   questions,
   currentQuestionIndex,
   onSelectQuestion,
   onPrev,
   onNext,
+  onToggleReview
 }: ExamShellProps) {
   const [isScreenHidden, setIsScreenHidden] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -71,23 +67,6 @@ export function ExamShell({
   };
 
   useEffect(() => {
-    // --- Disable Browser Functions ---
-    const handleContextMenu = (e: MouseEvent) => {
-        // Allow context menu only inside the interactive passage
-        if (!(e.target as HTMLElement).closest('[data-interactive-passage="true"]')) {
-            e.preventDefault();
-        }
-    };
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F12') {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('keydown', handleKeyDown);
-
     // --- Inactivity Timer ---
     const activityEvents: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
     activityEvents.forEach(event => window.addEventListener(event, resetInactivityTimer));
@@ -96,9 +75,6 @@ export function ExamShell({
 
     // --- Cleanup ---
     return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('keydown', handleKeyDown);
-      
       activityEvents.forEach(event => window.removeEventListener(event, resetInactivityTimer));
       if (inactivityTimer.current) {
         clearTimeout(inactivityTimer.current);
@@ -130,7 +106,7 @@ export function ExamShell({
         onToggleHelp={() => setIsHelpOpen(true)}
         onToggleSettings={() => setIsSettingsOpen(true)}
         onToggleHide={() => setIsScreenHidden(true)}
-        onToggleNotes={onToggleNotes}
+        onToggleNotes={() => setIsNotesOpen(prev => !prev)}
       />
 
       {/* Main Content Area - with padding for header and footer */}
@@ -138,7 +114,7 @@ export function ExamShell({
         {children}
       </main>
       
-      <NotesPanel isOpen={isNotesOpen} onClose={onToggleNotes} />
+      <NotesPanel isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} />
 
       {isScreenHidden && (
           <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-4">

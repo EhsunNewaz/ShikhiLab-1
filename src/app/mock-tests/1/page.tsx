@@ -19,7 +19,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BottomPanel } from '@/components/exam/bottom-panel';
 import { Separator } from '@/components/ui/separator';
 
 // Get the mock reading test for demonstration
@@ -246,7 +245,6 @@ export default function MockTestPage() {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [score, setScore] = useState(0);
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<string>>(new Set());
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -406,11 +404,14 @@ export default function MockTestPage() {
     <>
         <ExamShell
             onTimeUp={handleTimeUp}
-            isSubmitted={isSubmitted}
             onSubmit={() => setShowSubmitDialog(true)}
+            isSubmitted={isSubmitted}
+            questions={questionsWithStatus}
+            currentQuestionIndex={currentQuestionIndex}
+            onSelectQuestion={handleSelectQuestion}
+            onPrev={handlePrev}
+            onNext={handleNext}
             onToggleReview={handleToggleReview}
-            onToggleNotes={() => setIsNotesOpen(prev => !prev)}
-            isNotesOpen={isNotesOpen}
         >
             <SplitScreenLayout
             leftPanel={
@@ -435,15 +436,6 @@ export default function MockTestPage() {
                 </ScrollArea>
               </>
             }
-            />
-             <BottomPanel
-                questions={questionsWithStatus}
-                currentQuestionIndex={currentQuestionIndex}
-                onSelectQuestion={handleSelectQuestion}
-                isSubmitted={isSubmitted}
-                onNext={handleNext}
-                onPrev={handlePrev}
-                onReview={handleToggleReview}
             />
         </ExamShell>
         <SubmitConfirmationDialog 
