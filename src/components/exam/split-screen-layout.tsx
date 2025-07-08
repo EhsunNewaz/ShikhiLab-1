@@ -22,7 +22,7 @@ export function SplitScreenLayout({ leftPanel, rightPanel }: SplitScreenLayoutPr
       </Panel>
       <PanelResizeHandle 
         className={cn(
-            "flex w-[7px] items-center justify-center bg-background transition-colors hover:bg-muted",
+            "flex w-[7px] items-center justify-center bg-background transition-colors hover:bg-muted z-10",
             "focus-visible:bg-primary focus-visible:outline-none"
         )}
       >
@@ -30,7 +30,7 @@ export function SplitScreenLayout({ leftPanel, rightPanel }: SplitScreenLayoutPr
             <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
         </div>
       </PanelResizeHandle>
-      <Panel defaultSize={50} minSize={30} className="relative bg-[#fafafa]">
+      <Panel defaultSize={50} minSize={30} className="bg-[#fafafa]">
          {rightPanel}
       </Panel>
     </PanelGroup>
