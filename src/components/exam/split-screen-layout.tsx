@@ -1,6 +1,11 @@
 
+'use client';
+
 import type { ReactNode } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ArrowLeftRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SplitScreenLayoutProps {
   leftPanel: ReactNode;
@@ -9,18 +14,25 @@ interface SplitScreenLayoutProps {
 
 export function SplitScreenLayout({ leftPanel, rightPanel }: SplitScreenLayoutProps) {
   return (
-    <div className="flex h-full w-full flex-col font-exam lg:flex-row">
-      {/* Left Panel (Text) */}
-      <div className="h-1/2 w-full border-b-2 border-exam-border bg-white lg:h-full lg:w-1/2 lg:min-w-[400px] lg:border-b-0 lg:border-r-2">
+    <PanelGroup direction="horizontal" className="h-full w-full font-exam text-exam-text">
+      <Panel defaultSize={50} minSize={30} className="bg-white">
         <ScrollArea className="h-full">
           <div className="p-5">{leftPanel}</div>
         </ScrollArea>
-      </div>
-      
-      {/* Right Panel (Questions) */}
-      <div className="relative h-1/2 w-full bg-[#fafafa] lg:h-full lg:w-1/2 lg:min-w-[400px]">
+      </Panel>
+      <PanelResizeHandle 
+        className={cn(
+            "flex w-[7px] items-center justify-center bg-background transition-colors hover:bg-muted",
+            "focus-visible:bg-primary focus-visible:outline-none"
+        )}
+      >
+        <div className="flex h-8 w-6 items-center justify-center rounded-sm border bg-white shadow-sm">
+            <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </PanelResizeHandle>
+      <Panel defaultSize={50} minSize={30} className="relative bg-[#fafafa]">
          {rightPanel}
-      </div>
-    </div>
+      </Panel>
+    </PanelGroup>
   );
 }
