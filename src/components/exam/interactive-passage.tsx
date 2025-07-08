@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import Draggable from 'react-draggable';
 import { X, Pencil } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 // --- TYPES ---
@@ -240,9 +241,9 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className, anno
 
     setContextMenu({
         visible: true,
-        x: rect.left - rootRect.left,
-        y: rect.bottom - rootRect.top + 5,
-        type: 'selection',
+        x: e.clientX - rootRect.left,
+        y: e.clientY - rootRect.top,
+    type: 'selection',
         selection: offsets,
     });
   }
@@ -308,10 +309,33 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className, anno
           key={annotation.id}
           className={cn('cursor-pointer relative bg-exam-highlight')}
           data-annotation-id={annotation.id}
+          onClick={(e) => {
+            if (annotation.type === 'note') {
+              e.stopPropagation();
+              handleViewNote(annotation.id);
+            }
+          }}
         >
           {text.substring(annotation.start, annotation.end)}
-           {annotation.type === 'note' && (
-             <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full border border-white" title="This highlight has a note."/>
+           {annotation.type === 'note' && annotation.noteText && (
+             <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild> 
+                         <div 
+                           className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full border border-white" 
+                           onClick={(e) => e.stopPropagation()}
+                          />
+                    </TooltipTrigger>
+                    <TooltipContent 
+                        data-popup="true" 
+                        side="top" 
+                        align="center"
+                        className="max-w-xs whitespace-pre-wrap font-sans text-sm z-50 p-2"
+                    >
+                        <p>{annotation.noteText}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
            )}
         </span>
       );
@@ -324,6 +348,7 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className, anno
       parts.push(text.substring(lastIndex));
     }
     return parts;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, passageAnnotations]);
 
 
