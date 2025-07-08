@@ -17,6 +17,7 @@ import type { QuestionState } from '@/app/mock-tests/1/page';
 interface BottomPanelProps {
   questions: QuestionState[];
   currentQuestionIndex: number; // The index of the *question group*
+  totalQuestionGroups: number;
   onSelectQuestion: (questionNumber: number) => void;
   onPrev: () => void;
   onNext: () => void;
@@ -35,6 +36,7 @@ const COMPACT_THRESHOLD_PX = 600;
 export function BottomPanel({
   questions,
   currentQuestionIndex,
+  totalQuestionGroups,
   onSelectQuestion,
   onPrev,
   onNext,
@@ -51,8 +53,8 @@ export function BottomPanel({
     return boundary ? boundary.number : 1;
   };
 
-  const getQuestionsForPart = (part: number) => {
-    const boundary = partConfig.find(p => p.part === part);
+  const getQuestionsForPart = (partNumber: number) => {
+    const boundary = partConfig.find(p => p.number === partNumber);
     if (!boundary) return [];
     return questions.filter(q => {
         const num = parseInt(q.id);
@@ -92,7 +94,9 @@ export function BottomPanel({
     return null;
   }
   
-  const currentQuestionNumber = questions.find(q => q.originalQuestionIndex === currentQuestionIndex)?.id;
+  const currentQuestionGroupId = questions.find(q => q.originalQuestionIndex === currentQuestionIndex)?.id;
+  const currentQuestionGroupIndex = questions.findIndex(q => q.id === currentQuestionGroupId);
+
 
   const renderExpandedPart = (partNumber: number) => {
     const partQuestions = getQuestionsForPart(partNumber);
@@ -101,7 +105,7 @@ export function BottomPanel({
             <h3 className="font-semibold text-gray-800 text-sm pl-2 pr-1">Part {partNumber}</h3>
             <div className="flex items-center gap-1.5 flex-wrap">
             {partQuestions.map((q) => {
-                const isCurrent = q.id === currentQuestionNumber;
+                const isCurrent = q.originalQuestionIndex === currentQuestionIndex;
                 return (
                 <button
                     key={q.id}
@@ -203,10 +207,10 @@ export function BottomPanel({
               variant="outline" 
               size="icon" 
               className={cn("h-10 w-10 rounded-md border-2",
-                (currentQuestionIndex === initialQuestions.length - 1 || isSubmitted) ? "bg-gray-200 border-gray-400" : "bg-gray-800 border-gray-900 text-white hover:bg-gray-700"
+                (currentQuestionIndex === totalQuestionGroups - 1 || isSubmitted) ? "bg-gray-200 border-gray-400" : "bg-gray-800 border-gray-900 text-white hover:bg-gray-700"
               )} 
               onClick={onNext} 
-              disabled={currentQuestionIndex === initialQuestions.length - 1 || isSubmitted}>
+              disabled={currentQuestionIndex === totalQuestionGroups - 1 || isSubmitted}>
                 <ArrowRight className="h-6 w-6" />
             </Button>
         </div>

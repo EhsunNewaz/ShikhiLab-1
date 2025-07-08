@@ -1,8 +1,7 @@
 
 'use client';
 
-import type { ReactNode } from 'react';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { type ReactNode, useState, useEffect, useRef, useMemo } from 'react';
 import { ExamHeader } from './exam-header';
 import { cn } from '@/lib/utils';
 import { InactivityWarningDialog } from './inactivity-warning-dialog';
@@ -22,6 +21,7 @@ interface ExamShellProps {
   isSubmitted: boolean;
   questions: QuestionState[];
   currentQuestionIndex: number;
+  totalQuestionGroups: number;
   onSelectQuestion: (index: number) => void;
   onPrev: () => void;
   onNext: () => void;
@@ -42,6 +42,7 @@ export function ExamShell({
   isSubmitted,
   questions,
   currentQuestionIndex,
+  totalQuestionGroups,
   onSelectQuestion,
   onPrev,
   onNext,
@@ -153,6 +154,7 @@ export function ExamShell({
       <BottomPanel
         questions={questions}
         currentQuestionIndex={currentQuestionIndex}
+        totalQuestionGroups={totalQuestionGroups}
         onSelectQuestion={handleSelectQuestionFromPanel}
         isSubmitted={isSubmitted}
         onNext={onNext}

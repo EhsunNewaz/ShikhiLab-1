@@ -20,6 +20,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 
 // Get the mock reading test for demonstration
@@ -57,30 +59,32 @@ function ResultsCard({ score, total }: { score: number; total: number }) {
   );
 }
 
-// Component to render a single question based on its type
-function QuestionRenderer({
-  question,
-  answers,
-  onAnswerChange,
-  isSubmitted,
-  ...passageProps
-}: {
-  question: ReadingQuestionData;
-  answers: Record<string, any>;
-  onAnswerChange: (questionId: string, subQuestionId: string, value: any) => void;
-  isSubmitted: boolean;
-  annotations: Annotation[];
-  setAnnotations: (annotations: Annotation[]) => void;
-  scrollToAnnotationId: string | null;
-  onScrollComplete: () => void;
+
+function QuestionPanel({ questionGroup, answers, onAnswerChange, isSubmitted, ...passageProps }: {
+    questionGroup: ReadingQuestionData,
+    answers: Record<string, any>,
+    onAnswerChange: (questionId: string, subQuestionId: string, value: any) => void;
+    isSubmitted: boolean;
+    annotations: Annotation[];
+    setAnnotations: (annotations: Annotation[]) => void;
+    scrollToAnnotationId: string | null;
+    onScrollComplete: () => void;
 }) {
+    const [activeQuestionId, setActiveQuestionId] = useState<string | null>(questionGroup.subQuestions?.[0]?.id ?? questionGroup.id);
 
-    const handleSingleChange = (value: any) => {
-        onAnswerChange(question.id, question.id, value);
-    };
+    const questionRangeText = useMemo(() => {
+        if (!questionGroup.subQuestions || questionGroup.subQuestions.length === 0) {
+            return `Question ${questionGroup.id}`;
+        }
+        const firstId = questionGroup.subQuestions[0].id;
+        const lastId = questionGroup.subQuestions[questionGroup.subQuestions.length - 1].id;
+        return `Questions ${firstId}-${lastId}`;
+    }, [questionGroup]);
 
-    const handleSubQuestionChange = (subId: string, value: any) => {
-        onAnswerChange(question.id, subId, value);
+    const handleAnswerForSharedOptions = (value: any) => {
+        if (activeQuestionId) {
+            onAnswerChange(questionGroup.id, activeQuestionId, value);
+        }
     };
 
     const renderFeedback = (subQuestionId: string, subIsCorrect: boolean, subCorrectAnswer: string, explanation: string | undefined) => {
@@ -103,223 +107,250 @@ function QuestionRenderer({
         );
     };
 
-
-  switch (question.type) {
-    case 'fill-in-the-blank':
-        return (
-            <div className="space-y-4">
-                {question.subQuestions?.map(subQ => {
-                    const userAnswer = answers[question.id]?.[subQ.id] || '';
-                    const correctAnswer = question.correctAnswer[subQ.id];
-                    const isCorrect = isSubmitted && userAnswer.toLowerCase() === correctAnswer.toLowerCase();
-                    return (
-                        <div key={subQ.id}>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <Label htmlFor={subQ.id} className="leading-snug">
-                                    <span className="font-bold mr-2">{subQ.id}.</span>
-                                    <InteractivePassage id={`q-${subQ.id}-pre`} text={subQ.preText || ''} as="span" {...passageProps} />
-                                </Label>
-                                <ExamInput
-                                    id={subQ.id}
-                                    value={userAnswer}
-                                    onChange={e => handleSubQuestionChange(subQ.id, e.target.value)}
-                                    disabled={isSubmitted}
-                                    className={cn(isSubmitted && (isCorrect ? 'border-green-500' : 'border-destructive'))}
-                                />
-                                {subQ.postText && <Label htmlFor={subQ.id} className="leading-snug">
-                                    <InteractivePassage id={`q-${subQ.id}-post`} text={subQ.postText} as="span" {...passageProps} />
-                                </Label>}
-                            </div>
-                             {isSubmitted && renderFeedback(subQ.id, isCorrect, correctAnswer, question.explanation)}
-                        </div>
-                    )
-                })}
-            </div>
-        )
-    case 'multiple-choice':
-        const userAnswerMC = answers[question.id]?.[question.id] || '';
-        const isCorrectMC = isSubmitted && userAnswerMC === question.correctAnswer;
-        return (
-            <div className="space-y-4">
-                <div className="font-semibold">
-                    <InteractivePassage id={`q-${question.id}`} text={question.questionText!} {...passageProps} />
-                </div>
-                <ExamRadioGroup
-                value={userAnswerMC}
-                onValueChange={handleSingleChange}
-                disabled={isSubmitted}
-                className="space-y-2"
-                >
-                {question.options!.map(opt => {
-                    const isSelected = userAnswerMC === opt;
-                    const isCorrectOption = question.correctAnswer === opt;
-                    return (
-                        <div key={opt} className={cn(
-                            "flex items-center space-x-2 rounded-lg p-3 border",
-                            isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
-                            isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500",
-                            !isSubmitted && "bg-background"
-                        )}>
-                            <ExamRadioGroupItem 
-                                value={opt} 
-                                id={`${question.id}-${opt}`} 
-                                label={opt} 
-                                disabled={isSubmitted} 
-                                passageProps={passageProps}
-                                variant={'default'}
-                                isCorrect={isSubmitted && isCorrectOption}
-                                isSelected={isSelected}
-                            />
-                        </div>
-                    )
-                })}
-                </ExamRadioGroup>
-                {isSubmitted && renderFeedback(question.id, isCorrectMC, question.correctAnswer as string, question.explanation)}
-            </div>
-        );
-    case 'true-false-not-given':
-    case 'yes-no-not-given':
-        return (
-            <div className="space-y-6">
-                {question.subQuestions!.map(subQ => {
-                    const userAnswer = answers[question.id]?.[subQ.id] || '';
-                    const isCorrect = isSubmitted && userAnswer === question.correctAnswer[subQ.id];
-
-                    return (
-                        <div key={subQ.id}>
-                            <div className="flex items-start gap-3">
-                                <span className="flex h-7 w-7 items-center justify-center rounded border-2 border-gray-500 font-bold text-gray-800 flex-shrink-0 mt-0.5">{subQ.id}</span>
-                                <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="p" {...passageProps} />
-                            </div>
-                            <ExamRadioGroup
-                                value={userAnswer}
-                                onValueChange={(value) => handleSubQuestionChange(subQ.id, value)}
-                                disabled={isSubmitted}
-                                className="mt-2 space-y-1 pl-10"
-                            >
-                                {question.options!.map(opt => {
-                                    const isSelected = userAnswer === opt;
-                                    return (
-                                        <div key={opt} className={cn(
-                                            "flex items-center rounded-md p-2 transition-colors",
-                                            isSelected && !isSubmitted && "bg-blue-100",
-                                            isSubmitted && isCorrect && isSelected && "bg-green-100",
-                                            isSubmitted && !isCorrect && isSelected && "bg-red-100"
-                                        )}>
-                                            <ExamRadioGroupItem 
-                                                value={opt} 
-                                                id={`${subQ.id}-${opt}`}
-                                                label={opt}
-                                                disabled={isSubmitted}
-                                                passageProps={passageProps}
-                                            />
-                                        </div>
-                                    )
-                                })}
-                            </ExamRadioGroup>
-                            {isSubmitted && renderFeedback(subQ.id, isCorrect, question.correctAnswer[subQ.id], question.explanation)}
-                        </div>
-                    )
-                })}
-            </div>
-        );
-    case 'multiple-answer':
-        const userAnswerMA = answers[question.id]?.[question.id] || [];
-        const selectedCount = userAnswerMA.length;
-        const requiredCount = question.requiredAnswers || 0;
-        const correctAnswerMA = question.correctAnswer as string[];
-        const isCorrectMA = isSubmitted && JSON.stringify([...userAnswerMA].sort()) === JSON.stringify([...correctAnswerMA].sort());
-
-        const handleCheckboxChange = (option: string) => {
-            const currentAnswers = new Set(userAnswerMA);
-            if (currentAnswers.has(option)) {
-            currentAnswers.delete(option);
-            } else {
-            currentAnswers.add(option);
-            }
-            handleSingleChange(Array.from(currentAnswers));
-        };
-      
-        return (
-            <div className="space-y-4">
-                <div className="font-semibold flex items-center justify-between">
-                <InteractivePassage id={`q-${question.id}`} text={question.instruction!} {...passageProps} />
-                {requiredCount > 0 && <Badge variant={selectedCount === requiredCount ? "default" : "secondary"}>{selectedCount} of {requiredCount} selected</Badge>}
-                </div>
-                <div className="flex flex-col gap-2">
-                {question.options!.map(opt => {
-                    const isSelected = (userAnswerMA).includes(opt);
-                    const isCorrectOption = (correctAnswerMA).includes(opt);
-                    return (
-                        <div key={opt} className={cn(
-                            "flex items-center space-x-2 p-3 rounded-lg border",
-                            !isSubmitted && "bg-background",
-                            isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
-                            isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500"
-                        )}>
-                            <ExamCheckbox
-                                id={`${question.id}-${opt}`}
-                                checked={isSelected}
-                                onCheckedChange={() => handleCheckboxChange(opt)}
-                                label={opt}
-                                disabled={isSubmitted}
-                                passageProps={passageProps}
-                            />
-                        </div>
-                    )
-                })}
-                </div>
-                 {isSubmitted && renderFeedback(question.id, isCorrectMA, correctAnswerMA, question.explanation)}
-            </div>
-        );
-    case 'matching-headings':
-        return (
-            <div className="space-y-4">
-                <div className="p-4 border rounded-lg bg-gray-50">
-                    <h4 className="font-semibold mb-2">List of Headings</h4>
-                    <ul className="list-roman list-inside space-y-1">
-                        {question.matchingOptions?.map((opt, idx) => <li key={idx}><InteractivePassage id={`opt-${idx}`} as="span" text={opt} {...passageProps} /></li>)}
-                    </ul>
-                </div>
-                <div className="space-y-6">
-                    {question.subQuestions?.map(subQ => {
-                        const userAnswer = answers[question.id]?.[subQ.id] || '';
-                        const correctAnswer = question.correctAnswer[subQ.id];
-                        const subIsCorrect = isSubmitted && userAnswer === correctAnswer;
-                        return (
-                            <div key={subQ.id}>
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 space-y-2 sm:space-y-0">
-                                    <div className="flex-1">
-                                        <span className="font-bold mr-2">{subQ.id}.</span>
-                                        <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="span" {...passageProps} />
+    const QuestionContent = () => {
+        switch (questionGroup.type) {
+            case 'fill-in-the-blank':
+                return (
+                    <div className="space-y-4">
+                        {questionGroup.subQuestions?.map(subQ => {
+                            const userAnswer = answers[questionGroup.id]?.[subQ.id] || '';
+                            const correctAnswer = questionGroup.correctAnswer[subQ.id];
+                            const isCorrect = isSubmitted && userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+                            return (
+                                <div key={subQ.id}>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <Label htmlFor={subQ.id} className="leading-snug">
+                                            <span className="font-bold mr-2">{subQ.id}.</span>
+                                            <InteractivePassage id={`q-${subQ.id}-pre`} text={subQ.preText || ''} as="span" {...passageProps} />
+                                        </Label>
+                                        <ExamInput
+                                            id={subQ.id}
+                                            value={userAnswer}
+                                            onChange={e => onAnswerChange(questionGroup.id, subQ.id, e.target.value)}
+                                            disabled={isSubmitted}
+                                            className={cn(isSubmitted && (isCorrect ? 'border-green-500' : 'border-destructive'))}
+                                        />
+                                        {subQ.postText && <Label htmlFor={subQ.id} className="leading-snug">
+                                            <InteractivePassage id={`q-${subQ.id}-post`} text={subQ.postText} as="span" {...passageProps} />
+                                        </Label>}
                                     </div>
-                                    <ExamSelect
-                                        value={userAnswer}
-                                        onValueChange={(val) => handleSubQuestionChange(subQ.id, val)}
-                                        disabled={isSubmitted}
-                                    >
-                                        <ExamSelectTrigger className={cn(
-                                            isSubmitted && (subIsCorrect ? 'border-green-500' : 'border-destructive')
-                                        )}>
-                                            <ExamSelectValue placeholder="Choose..." />
-                                        </ExamSelectTrigger>
-                                        <ExamSelectContent>
-                                            {question.matchingOptions?.map((opt, idx) => (
-                                                <ExamSelectItem key={idx} value={opt}>{opt}</ExamSelectItem>
-                                            ))}
-                                        </ExamSelectContent>
-                                    </ExamSelect>
+                                    {isSubmitted && renderFeedback(subQ.id, isCorrect, correctAnswer, questionGroup.explanation)}
                                 </div>
-                                {isSubmitted && renderFeedback(subQ.id, subIsCorrect, correctAnswer, question.explanation)}
-                            </div>
-                        )
-                    })}
-                </div>
+                            )
+                        })}
+                    </div>
+                )
+             case 'multiple-choice':
+                const userAnswerMC = answers[questionGroup.id]?.[questionGroup.id] || '';
+                const isCorrectMC = isSubmitted && userAnswerMC === questionGroup.correctAnswer;
+                return (
+                    <div className="space-y-4">
+                        <div className="font-semibold">
+                            <InteractivePassage id={`q-${questionGroup.id}`} text={questionGroup.questionText!} {...passageProps} />
+                        </div>
+                        <ExamRadioGroup
+                            value={userAnswerMC}
+                            onValueChange={(value) => onAnswerChange(questionGroup.id, questionGroup.id, value)}
+                            disabled={isSubmitted}
+                            className="space-y-2"
+                        >
+                        {questionGroup.options!.map(opt => {
+                            const isSelected = userAnswerMC === opt;
+                            const isCorrectOption = questionGroup.correctAnswer === opt;
+                            return (
+                                <div key={opt} className={cn(
+                                    "flex items-center space-x-2 rounded-lg p-3 border",
+                                    isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
+                                    isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500",
+                                    !isSubmitted && "bg-background"
+                                )}>
+                                    <ExamRadioGroupItem 
+                                        value={opt} 
+                                        id={`${questionGroup.id}-${opt}`} 
+                                        label={opt} 
+                                        disabled={isSubmitted} 
+                                        passageProps={passageProps}
+                                    />
+                                </div>
+                            )
+                        })}
+                        </ExamRadioGroup>
+                        {isSubmitted && renderFeedback(questionGroup.id, isCorrectMC, questionGroup.correctAnswer as string, questionGroup.explanation)}
+                    </div>
+                );
+             case 'true-false-not-given':
+             case 'yes-no-not-given':
+                return (
+                    <div className="space-y-6">
+                        {questionGroup.subQuestions!.map(subQ => {
+                            const userAnswer = answers[questionGroup.id]?.[subQ.id] || '';
+                            const isCorrect = isSubmitted && userAnswer === questionGroup.correctAnswer[subQ.id];
+
+                            return (
+                                <div key={subQ.id}>
+                                    <div className="flex items-start gap-3">
+                                        <span className={cn(
+                                            "flex h-7 w-7 items-center justify-center rounded border-2 font-bold flex-shrink-0 mt-0.5",
+                                            activeQuestionId === subQ.id ? "border-blue-600 text-blue-800" : "border-gray-500 text-gray-800"
+                                        )}>{subQ.id}</span>
+                                        <button 
+                                            onClick={() => setActiveQuestionId(subQ.id)}
+                                            disabled={isSubmitted}
+                                            className={cn(
+                                                "flex-1 text-left p-2 rounded",
+                                                activeQuestionId === subQ.id && "bg-blue-50"
+                                            )}
+                                        >
+                                            <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="p" {...passageProps} />
+                                        </button>
+                                        <span className="font-semibold text-gray-600 w-24 text-right">
+                                            {answers[questionGroup.id]?.[subQ.id] || '...'}
+                                        </span>
+                                    </div>
+                                    {isSubmitted && (
+                                        <div className="pl-10">
+                                            {renderFeedback(subQ.id, isCorrect, questionGroup.correctAnswer[subQ.id], questionGroup.explanation)}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
+                        <div className="pl-10 mt-4 pt-4 border-t">
+                             <ExamRadioGroup
+                                value={activeQuestionId ? answers[questionGroup.id]?.[activeQuestionId] || '' : ''}
+                                onValueChange={handleAnswerForSharedOptions}
+                                disabled={isSubmitted || !activeQuestionId}
+                                className="flex items-center justify-center gap-4"
+                            >
+                                {questionGroup.options!.map(opt => (
+                                    <ExamRadioGroupItem 
+                                        key={opt}
+                                        value={opt} 
+                                        id={`${activeQuestionId}-${opt}`}
+                                        label={opt}
+                                        disabled={isSubmitted || !activeQuestionId}
+                                        passageProps={passageProps}
+                                        variant="button"
+                                        isSelected={activeQuestionId ? answers[questionGroup.id]?.[activeQuestionId] === opt : false}
+                                        isCorrect={isSubmitted && activeQuestionId ? questionGroup.correctAnswer[activeQuestionId] === opt : false}
+                                    />
+                                ))}
+                            </ExamRadioGroup>
+                        </div>
+                    </div>
+                );
+            case 'multiple-answer':
+                const userAnswerMA = answers[questionGroup.id]?.[questionGroup.id] || [];
+                const selectedCount = userAnswerMA.length;
+                const requiredCount = questionGroup.requiredAnswers || 0;
+                const correctAnswerMA = questionGroup.correctAnswer as string[];
+                const isCorrectMA = isSubmitted && JSON.stringify([...userAnswerMA].sort()) === JSON.stringify([...correctAnswerMA].sort());
+
+                const handleCheckboxChange = (option: string) => {
+                    const currentAnswers = new Set(userAnswerMA);
+                    if (currentAnswers.has(option)) {
+                        currentAnswers.delete(option);
+                    } else {
+                        currentAnswers.add(option);
+                    }
+                    onAnswerChange(questionGroup.id, questionGroup.id, Array.from(currentAnswers));
+                };
+            
+                return (
+                    <div className="space-y-4">
+                        <div className="font-semibold flex items-center justify-between">
+                            <InteractivePassage id={`q-${questionGroup.id}`} text={questionGroup.instruction!} {...passageProps} />
+                            {requiredCount > 0 && <Badge variant={selectedCount === requiredCount ? "default" : "secondary"}>{selectedCount} of {requiredCount} selected</Badge>}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                        {questionGroup.options!.map(opt => {
+                            const isSelected = (userAnswerMA).includes(opt);
+                            const isCorrectOption = (correctAnswerMA).includes(opt);
+                            return (
+                                <div key={opt} className={cn(
+                                    "flex items-center space-x-2 p-3 rounded-lg border",
+                                    !isSubmitted && "bg-background",
+                                    isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
+                                    isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500"
+                                )}>
+                                    <ExamCheckbox
+                                        id={`${questionGroup.id}-${opt}`}
+                                        checked={isSelected}
+                                        onCheckedChange={() => handleCheckboxChange(opt)}
+                                        label={opt}
+                                        disabled={isSubmitted}
+                                        passageProps={passageProps}
+                                    />
+                                </div>
+                            )
+                        })}
+                        </div>
+                        {isSubmitted && renderFeedback(questionGroup.id, isCorrectMA, correctAnswerMA, questionGroup.explanation)}
+                    </div>
+                );
+            case 'matching-headings':
+                return (
+                    <div className="space-y-4">
+                        <div className="p-4 border rounded-lg bg-gray-50">
+                            <h4 className="font-semibold mb-2">List of Headings</h4>
+                            <ul className="list-roman list-inside space-y-1">
+                                {questionGroup.matchingOptions?.map((opt, idx) => <li key={idx}><InteractivePassage id={`opt-${idx}`} as="span" text={opt} {...passageProps} /></li>)}
+                            </ul>
+                        </div>
+                        <div className="space-y-6">
+                            {questionGroup.subQuestions?.map(subQ => {
+                                const userAnswer = answers[questionGroup.id]?.[subQ.id] || '';
+                                const correctAnswer = questionGroup.correctAnswer[subQ.id];
+                                const subIsCorrect = isSubmitted && userAnswer === correctAnswer;
+                                return (
+                                    <div key={subQ.id}>
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 space-y-2 sm:space-y-0">
+                                            <div className="flex-1">
+                                                <span className="font-bold mr-2">{subQ.id}.</span>
+                                                <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="span" {...passageProps} />
+                                            </div>
+                                            <ExamSelect
+                                                value={userAnswer}
+                                                onValueChange={(val) => onAnswerChange(questionGroup.id, subQ.id, val)}
+                                                disabled={isSubmitted}
+                                            >
+                                                <ExamSelectTrigger className={cn(
+                                                    isSubmitted && (subIsCorrect ? 'border-green-500' : 'border-destructive')
+                                                )}>
+                                                    <ExamSelectValue placeholder="Choose..." />
+                                                </ExamSelectTrigger>
+                                                <ExamSelectContent>
+                                                    {questionGroup.matchingOptions?.map((opt, idx) => (
+                                                        <ExamSelectItem key={idx} value={opt}>{opt}</ExamSelectItem>
+                                                    ))}
+                                                </ExamSelectContent>
+                                            </ExamSelect>
+                                        </div>
+                                        {isSubmitted && renderFeedback(subQ.id, subIsCorrect, correctAnswer, questionGroup.explanation)}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )
+            default:
+            return <p>Unsupported question type</p>;
+        }
+    }
+
+    return (
+        <div className="font-exam text-base text-exam-text">
+            <div className="p-4 border-b">
+                 <h2 className="font-bold">{questionRangeText}</h2>
+                 <div className="text-sm text-gray-600 mt-1">
+                    <InteractivePassage id={`instruction-${questionGroup.id}`} text={questionGroup.instruction} {...passageProps} as="div" />
+                 </div>
             </div>
-        )
-    default:
-      return <p>Unsupported question type</p>;
-  }
+            <div className="p-4">
+                 <QuestionContent />
+            </div>
+        </div>
+    )
 }
 
 export default function MockTestPage() {
@@ -446,13 +477,13 @@ export default function MockTestPage() {
     }
   }, [answers, isSubmitted, readingTest.id, totalQuestions, user, toast]);
 
-
   const handleTimeUp = useCallback(() => {
     if (!isSubmitted) {
         console.log('Time is up! Submitting test.');
         handleSubmit();
     }
   }, [isSubmitted, handleSubmit]);
+
 
   const questionsWithStatus = useMemo((): QuestionState[] => {
       const flatQuestions: QuestionState[] = [];
@@ -547,20 +578,10 @@ export default function MockTestPage() {
   }
 
 
-  if (currentPassageIndex === undefined) {
+  if (currentPassageIndex === undefined || currentPassageIndex < 0) {
     return <div>Loading test...</div>
   }
   
-  // Group questions by instruction
-  const questionGroups: { instruction: string, questions: ReadingQuestionData[] }[] = [];
-  passageQuestions.forEach(q => {
-      const lastGroup = questionGroups[questionGroups.length - 1];
-      if (lastGroup && lastGroup.instruction === q.instruction) {
-          lastGroup.questions.push(q);
-      } else {
-          questionGroups.push({ instruction: q.instruction, questions: [q] });
-      }
-  });
 
   return (
     <>
@@ -578,6 +599,7 @@ export default function MockTestPage() {
             onToggleNotes={() => setIsNotesOpen(prev => !prev)}
             annotations={annotations}
             onNoteSelect={setScrollToAnnotationId}
+            totalQuestionGroups={initialQuestions.length}
         >
             <SplitScreenLayout
             leftPanel={
@@ -595,37 +617,18 @@ export default function MockTestPage() {
             rightPanel={
               <>
                 <ScrollArea className="h-full">
-                    <div className="p-4 pb-48 space-y-8">
-                        {isSubmitted && <ResultsCard score={score} total={totalQuestions} />}
-                        {questionGroups.map((group, index) => {
-                             const firstQuestionId = group.questions[0].subQuestions ? group.questions[0].subQuestions![0].id : group.questions[0].id;
-                             const lastQuestion = group.questions[group.questions.length - 1];
-                             const lastQuestionId = lastQuestion.subQuestions ? lastQuestion.subQuestions[lastQuestion.subQuestions.length -1].id : lastQuestion.id;
-                             const rangeText = firstQuestionId === lastQuestionId ? `Question ${firstQuestionId}` : `Questions ${firstQuestionId}-${lastQuestionId}`;
-
-                            return (
-                                <div key={index}>
-                                    <div className="mb-4">
-                                        <h3 className="font-bold text-gray-800">{rangeText}</h3>
-                                        <div className="text-sm text-gray-700">
-                                            <InteractivePassage id={`instruction-${index}`} text={group.instruction} {...passageProps} as="div" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        {group.questions.map(question => (
-                                             <QuestionRenderer
-                                                key={question.id}
-                                                question={question}
-                                                answers={answers}
-                                                onAnswerChange={handleAnswerChange}
-                                                isSubmitted={isSubmitted}
-                                                {...passageProps}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )
-                        })}
+                    <div className="pb-48">
+                      {isSubmitted && <div className="p-4"><ResultsCard score={score} total={totalQuestions} /></div>}
+                      {passageQuestions.map((question, index) => (
+                          <QuestionPanel
+                              key={question.id}
+                              questionGroup={question}
+                              answers={answers}
+                              onAnswerChange={handleAnswerChange}
+                              isSubmitted={isSubmitted}
+                              {...passageProps}
+                          />
+                      ))}
                     </div>
                 </ScrollArea>
               </>
