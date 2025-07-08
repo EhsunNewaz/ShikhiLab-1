@@ -52,6 +52,10 @@ const textToSpeechFlow = ai.defineFlow(
     name: 'textToSpeechFlow',
     inputSchema: TextToSpeechInputSchema,
     outputSchema: TextToSpeechOutputSchema,
+    retry: {
+      maxRetries: 3,
+      backoff: {initialDelay: 2000, factor: 2},
+    },
   },
   async (query) => {
     const {media} = await ai.generate({

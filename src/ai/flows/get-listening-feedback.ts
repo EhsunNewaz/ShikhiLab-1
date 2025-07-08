@@ -54,6 +54,10 @@ const getListeningFeedbackFlow = ai.defineFlow(
     name: 'getListeningFeedbackFlow',
     inputSchema: GetListeningFeedbackInputSchema,
     outputSchema: GetListeningFeedbackOutputSchema,
+    retry: {
+      maxRetries: 3,
+      backoff: {initialDelay: 2000, factor: 2},
+    },
   },
   async (input) => {
     const {output} = await prompt(input);

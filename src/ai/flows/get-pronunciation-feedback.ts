@@ -71,6 +71,10 @@ const getPronunciationFeedbackFlow = ai.defineFlow(
     name: 'getPronunciationFeedbackFlow',
     inputSchema: GetPronunciationFeedbackInputSchema,
     outputSchema: PronunciationAnalysisSchema,
+    retry: {
+      maxRetries: 3,
+      backoff: {initialDelay: 2000, factor: 2},
+    },
   },
   async input => {
     const {output} = await prompt(input);
