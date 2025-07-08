@@ -12,13 +12,8 @@ import { Button } from '../ui/button';
 import { NotesPanel } from './notes-panel';
 import { BottomPanel } from './bottom-panel';
 import type { Annotation } from './interactive-passage';
+import type { QuestionState } from '@/app/mock-tests/1/page';
 
-interface QuestionState {
-    id: string;
-    passage: number;
-    status: 'unanswered' | 'answered';
-    isReviewed: boolean;
-  }
 
 interface ExamShellProps {
   children: ReactNode;
@@ -102,6 +97,22 @@ export function ExamShell({
     setShowInactivityModal(false);
     resetInactivityTimer();
   }
+  
+  const questionNumberToGroupIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    questions.forEach((q) => {
+        map.set(q.id, q.originalQuestionIndex);
+    });
+    return map;
+  }, [questions]);
+  
+  const handleSelectQuestionFromPanel = (questionNumber: number) => {
+    const groupIndex = questionNumberToGroupIndexMap.get(String(questionNumber));
+    if (groupIndex !== undefined) {
+        onSelectQuestion(groupIndex);
+    }
+  };
+
 
   return (
     <div
@@ -120,7 +131,7 @@ export function ExamShell({
       />
 
       {/* Main Content Area - with padding for header and footer */}
-      <main className="h-full bg-white pt-[60px] pb-[120px]">
+      <main className="h-full bg-white pt-[60px] pb-[95px]">
         {children}
       </main>
       
@@ -142,7 +153,7 @@ export function ExamShell({
       <BottomPanel
         questions={questions}
         currentQuestionIndex={currentQuestionIndex}
-        onSelectQuestion={onSelectQuestion}
+        onSelectQuestion={handleSelectQuestionFromPanel}
         isSubmitted={isSubmitted}
         onNext={onNext}
         onPrev={onPrev}

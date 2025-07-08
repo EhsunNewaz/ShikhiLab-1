@@ -11,18 +11,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { QuestionState } from '@/app/mock-tests/1/page';
 
-interface QuestionState {
-  id: string;
-  passage: number;
-  status: 'unanswered' | 'answered';
-  isReviewed: boolean;
-}
 
 interface BottomPanelProps {
   questions: QuestionState[];
-  currentQuestionIndex: number;
-  onSelectQuestion: (index: number) => void;
+  currentQuestionIndex: number; // The index of the *question group*
+  onSelectQuestion: (questionNumber: number) => void;
   onPrev: () => void;
   onNext: () => void;
   onReview: () => void;
@@ -30,12 +25,12 @@ interface BottomPanelProps {
 }
 
 const partConfig = [
-    { number: 1, size: 13 },
-    { number: 2, size: 13 },
-    { number: 3, size: 14 },
+    { number: 1, start: 1, end: 13 },
+    { number: 2, start: 14, end: 26 },
+    { number: 3, start: 27, end: 40 },
 ];
 
-const COMPACT_THRESHOLD_PX = 450;
+const COMPACT_THRESHOLD_PX = 600;
 
 export function BottomPanel({
   questions,
@@ -47,36 +42,23 @@ export function BottomPanel({
   isSubmitted,
 }: BottomPanelProps) {
     
-  const partBoundaries = useMemo(() => {
-    const boundaries: { part: number, start: number, end: number }[] = [];
-    let cumulativeSize = 0;
-    partConfig.forEach(p => {
-        boundaries.push({
-            part: p.number,
-            start: cumulativeSize,
-            end: cumulativeSize + p.size,
-        });
-        cumulativeSize += p.size;
-    });
-    return boundaries;
-  }, []);
-
   const getPartFromIndex = (index: number) => {
-    const boundary = partBoundaries.find(p => index >= p.start && index < p.end);
-    return boundary ? boundary.part : 1;
+    // This logic needs to be more robust based on actual question numbers, not index
+    const currentQuestionNumber = questions.find(q => q.originalQuestionIndex === index)?.id;
+    if (!currentQuestionNumber) return 1;
+    const num = parseInt(currentQuestionNumber);
+    const boundary = partConfig.find(p => num >= p.start && num <= p.end);
+    return boundary ? boundary.number : 1;
   };
 
   const getQuestionsForPart = (part: number) => {
-    if (!questions) return [];
-    const boundary = partBoundaries.find(p => p.part === part);
+    const boundary = partConfig.find(p => p.part === part);
     if (!boundary) return [];
-    return questions.slice(boundary.start, boundary.end);
+    return questions.filter(q => {
+        const num = parseInt(q.id);
+        return num >= boundary.start && num <= boundary.end;
+    });
   };
-
-  const getStartIndexForPart = (part: number) => {
-    const boundary = partBoundaries.find(p => p.part === part);
-    return boundary ? boundary.start : 0;
-  }
 
   const [activePart, setActivePart] = useState(getPartFromIndex(currentQuestionIndex));
   const [isCompact, setIsCompact] = useState(false);
@@ -94,13 +76,14 @@ export function BottomPanel({
       }
     });
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
+    const currentRef = containerRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
     return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
+      if (currentRef) {
+        observer.unobserve(currentRef);
       }
     };
   }, []);
@@ -108,31 +91,30 @@ export function BottomPanel({
   if (!questions || questions.length === 0) {
     return null;
   }
+  
+  const currentQuestionNumber = questions.find(q => q.originalQuestionIndex === currentQuestionIndex)?.id;
 
   const renderExpandedPart = (partNumber: number) => {
     const partQuestions = getQuestionsForPart(partNumber);
-    const startIndex = getStartIndexForPart(partNumber);
     return (
         <div className="flex items-center gap-2 whitespace-nowrap p-2 rounded-md bg-white shadow-inner border border-gray-300">
             <h3 className="font-semibold text-gray-800 text-sm pl-2 pr-1">Part {partNumber}</h3>
-            <div className="flex items-center gap-1.5">
-            {partQuestions.map((q, i) => {
-                const globalIndex = startIndex + i;
-                const isCurrent = globalIndex === currentQuestionIndex;
+            <div className="flex items-center gap-1.5 flex-wrap">
+            {partQuestions.map((q) => {
+                const isCurrent = q.id === currentQuestionNumber;
                 return (
                 <button
                     key={q.id}
-                    onClick={() => onSelectQuestion(globalIndex)}
+                    onClick={() => onSelectQuestion(parseInt(q.id))}
                     disabled={isSubmitted}
                     className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-sm text-sm font-semibold transition-colors border border-gray-400',
-                    {
-                        'bg-gray-700 text-white': q.status === 'unanswered',
-                        'bg-white text-gray-700 underline': q.status === 'answered',
-                        'bg-blue-600 text-white border-blue-700': isCurrent,
-                        'rounded-full !border-orange-500 border-2 !bg-gray-700 text-white': q.isReviewed && q.status === 'unanswered',
-                        'rounded-full !border-orange-500 border-2 !bg-white text-gray-700 underline': q.isReviewed && q.status === 'answered',
-                    }
+                        'flex h-7 w-7 items-center justify-center rounded-sm text-sm font-semibold transition-colors border-2',
+                        {
+                            'bg-white border-gray-400 text-gray-700': q.status === 'unanswered',
+                            'bg-gray-700 border-gray-800 text-white': q.status === 'answered',
+                            'border-blue-600': isCurrent,
+                            'rounded-full !border-orange-500': q.isReviewed,
+                        }
                     )}
                     aria-current={isCurrent}
                     aria-label={`Question ${q.id}, status: ${q.status}`}
@@ -152,8 +134,8 @@ export function BottomPanel({
     return (
         <Button 
             variant="outline" 
-            className="bg-gray-200 border-gray-400 whitespace-nowrap" 
-            onClick={() => onSelectQuestion(getStartIndexForPart(partNumber))}
+            className="bg-gray-200 border-gray-400 whitespace-nowrap h-auto py-2" 
+            onClick={() => onSelectQuestion(partConfig.find(p => p.number === partNumber)?.start || 1)}
             disabled={isSubmitted}
         >
             Part {partNumber}: {answeredCount} of {partQuestions.length}
@@ -164,16 +146,16 @@ export function BottomPanel({
   const otherParts = partConfig.map(p => p.number).filter(p => p !== activePart);
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-20 border-t bg-gray-100 font-exam p-2 flex items-center gap-4 shadow-top">
+    <footer className="fixed bottom-0 left-0 right-0 z-20 border-t bg-gray-100 font-exam p-2 flex items-center gap-4 shadow-top h-[95px]">
         {/* Question Palette Container (Flexible) */}
-        <div className="flex-1 min-w-0 overflow-hidden" ref={containerRef}>
+        <div className="flex-1 min-w-0 overflow-x-auto" ref={containerRef}>
              <div className="flex items-center gap-3">
                 {isCompact ? (
                     <>
                         {renderExpandedPart(activePart)}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="bg-gray-200 border-gray-400 whitespace-nowrap">
+                            <Button variant="outline" className="bg-gray-200 border-gray-400 whitespace-nowrap h-auto py-2">
                                 Switch Part <ChevronDown className="ml-2 h-4 w-4" />
                             </Button>
                             </DropdownMenuTrigger>
@@ -182,7 +164,7 @@ export function BottomPanel({
                                 const partQuestions = getQuestionsForPart(partNumber);
                                 const answeredCount = partQuestions.filter(q => q.status === 'answered').length;
                                 return (
-                                <DropdownMenuItem key={partNumber} onSelect={() => onSelectQuestion(getStartIndexForPart(partNumber))} disabled={isSubmitted}>
+                                <DropdownMenuItem key={partNumber} onSelect={() => onSelectQuestion(partConfig.find(p => p.number === partNumber)?.start || 1)} disabled={isSubmitted}>
                                     Part {partNumber}: {answeredCount} of {partQuestions.length} questions
                                 </DropdownMenuItem>
                                 )
@@ -204,13 +186,27 @@ export function BottomPanel({
 
         {/* Action Button Container (Fixed) */}
         <div className="flex-shrink-0 flex items-center gap-3 pr-2">
-            <Button variant="outline" size="icon" className="h-10 w-10 border-2 border-gray-400 bg-gray-200" onClick={onReview} disabled={isSubmitted}>
+            <Button variant="outline" size="icon" className="h-10 w-10 border-2 border-gray-400 bg-gray-200 rounded-md" onClick={onReview} disabled={isSubmitted}>
                 <Flag className="h-5 w-5 text-yellow-600" />
             </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-2 border-gray-400 bg-gray-200" onClick={onPrev} disabled={currentQuestionIndex === 0 || isSubmitted}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={cn("h-10 w-10 rounded-md border-2", 
+                (currentQuestionIndex === 0 || isSubmitted) ? "bg-gray-200 border-gray-400" : "bg-gray-800 border-gray-900 text-white hover:bg-gray-700"
+              )} 
+              onClick={onPrev} 
+              disabled={currentQuestionIndex === 0 || isSubmitted}>
                 <ArrowLeft className="h-6 w-6" />
             </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-2 border-gray-400 bg-gray-200" onClick={onNext} disabled={currentQuestionIndex === questions.length - 1 || isSubmitted}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={cn("h-10 w-10 rounded-md border-2",
+                (currentQuestionIndex === initialQuestions.length - 1 || isSubmitted) ? "bg-gray-200 border-gray-400" : "bg-gray-800 border-gray-900 text-white hover:bg-gray-700"
+              )} 
+              onClick={onNext} 
+              disabled={currentQuestionIndex === initialQuestions.length - 1 || isSubmitted}>
                 <ArrowRight className="h-6 w-6" />
             </Button>
         </div>

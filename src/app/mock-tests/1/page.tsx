@@ -26,16 +26,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const readingTest = readingTestData[0];
 
 // We combine the static question data with a dynamic 'status'
-interface QuestionState extends ReadingQuestionData {
+export interface QuestionState {
+  id: string; // The question number, e.g., '1', '14'
   status: 'unanswered' | 'answered';
   isReviewed: boolean;
+  // Metadata for navigation
+  passage: number;
+  originalQuestionIndex: number; // The index of the question *group* in initialQuestions
 }
 
 // Initialize question state from static data
-const initialQuestions: QuestionState[] = readingTest.questions.map(q => ({
+const initialQuestions: ReadingQuestionData[] = readingTest.questions.map(q => ({
   ...q,
-  status: 'unanswered',
-  isReviewed: false,
 }));
 
 
@@ -89,7 +91,7 @@ function QuestionRenderer({
             {!subIsCorrect && (
               <p className="font-semibold text-destructive">
                 Correct Answer: <span className="font-normal">
-                  {subCorrectAnswer}
+                  {Array.isArray(subCorrectAnswer) ? subCorrectAnswer.join(', ') : subCorrectAnswer}
                 </span>
               </p>
             )}
@@ -172,7 +174,7 @@ function QuestionRenderer({
                     )
                 })}
                 </ExamRadioGroup>
-                {isSubmitted && renderFeedback(question.id, isCorrectMC, question.correctAnswer, question.explanation)}
+                {isSubmitted && renderFeedback(question.id, isCorrectMC, question.correctAnswer as string, question.explanation)}
             </div>
         );
     case 'true-false-not-given':
@@ -267,7 +269,7 @@ function QuestionRenderer({
                     )
                 })}
                 </div>
-                 {isSubmitted && renderFeedback(question.id, isCorrectMA, correctAnswerMA.join(', '), question.explanation)}
+                 {isSubmitted && renderFeedback(question.id, isCorrectMA, correctAnswerMA, question.explanation)}
             </div>
         );
     case 'matching-headings':
@@ -382,39 +384,6 @@ export default function MockTestPage() {
         return acc + 1;
     }, 0);
   }, []);
-
-  const questionsWithStatus = useMemo((): QuestionState[] => {
-    return initialQuestions.map(q => {
-        let isAnswered = false;
-        const groupAnswer = answers[q.id];
-        if (groupAnswer) {
-             if (q.subQuestions) {
-                const answeredCount = q.subQuestions.filter(subQ => !!groupAnswer[subQ.id]).length;
-                isAnswered = answeredCount > 0;
-            } else if (q.type === 'multiple-answer') {
-                 isAnswered = Array.isArray(groupAnswer[q.id]) && groupAnswer[q.id].length > 0;
-            } else {
-                 isAnswered = !!groupAnswer[q.id];
-            }
-        }
-        return {
-            ...q,
-            status: isAnswered ? 'answered' : 'unanswered',
-            isReviewed: reviewedQuestions.has(q.id)
-        }
-    })
-  }, [answers, reviewedQuestions]);
-
-  const handleAnswerChange = (questionId: string, subQuestionId: string, value: any) => {
-    if (isSubmitted) return;
-    setAnswers(prev => ({ 
-        ...prev, 
-        [questionId]: {
-            ...prev[questionId],
-            [subQuestionId]: value
-        } 
-    }));
-  };
   
   const handleSubmit = useCallback(async () => {
     setShowSubmitDialog(false);
@@ -435,7 +404,7 @@ export default function MockTestPage() {
         } else if (q.type === 'multiple-answer') {
             const userAnswer = userAnswerGroup[q.id];
             const userAnswerSorted = [...(userAnswer || [])].sort();
-            const correctAnswerSorted = [...(q.correctAnswer || [])].sort();
+            const correctAnswerSorted = [...(q.correctAnswer as string[] || [])].sort();
             if (JSON.stringify(userAnswerSorted) === JSON.stringify(correctAnswerSorted)) {
                 calculatedScore++;
             }
@@ -477,12 +446,55 @@ export default function MockTestPage() {
     }
   }, [answers, isSubmitted, readingTest.id, totalQuestions, user, toast]);
 
+
   const handleTimeUp = useCallback(() => {
     if (!isSubmitted) {
         console.log('Time is up! Submitting test.');
         handleSubmit();
     }
   }, [isSubmitted, handleSubmit]);
+
+  const questionsWithStatus = useMemo((): QuestionState[] => {
+      const flatQuestions: QuestionState[] = [];
+      initialQuestions.forEach((group, groupIndex) => {
+          const isGroupReviewed = reviewedQuestions.has(group.id);
+          if (group.subQuestions) {
+              group.subQuestions.forEach(subQ => {
+                  const isAnswered = !!(answers[group.id]?.[subQ.id]);
+                  flatQuestions.push({
+                      id: subQ.id,
+                      status: isAnswered ? 'answered' : 'unanswered',
+                      isReviewed: isGroupReviewed,
+                      passage: group.passage,
+                      originalQuestionIndex: groupIndex,
+                  });
+              });
+          } else {
+               const isAnswered = !!(answers[group.id]?.[group.id]);
+               flatQuestions.push({
+                  id: group.id,
+                  status: isAnswered ? 'answered' : 'unanswered',
+                  isReviewed: isGroupReviewed,
+                  passage: group.passage,
+                  originalQuestionIndex: groupIndex,
+              });
+          }
+      });
+      // Ensure sorting by numeric ID
+      return flatQuestions.sort((a,b) => parseInt(a.id) - parseInt(b.id));
+  }, [answers, reviewedQuestions]);
+
+
+  const handleAnswerChange = (questionId: string, subQuestionId: string, value: any) => {
+    if (isSubmitted) return;
+    setAnswers(prev => ({ 
+        ...prev, 
+        [questionId]: {
+            ...prev[questionId],
+            [subQuestionId]: value
+        } 
+    }));
+  };
   
   const handleSelectQuestion = (index: number) => {
       setCurrentQuestionIndex(index);
@@ -595,7 +607,9 @@ export default function MockTestPage() {
                                 <div key={index}>
                                     <div className="mb-4">
                                         <h3 className="font-bold text-gray-800">{rangeText}</h3>
-                                        <InteractivePassage id={`instruction-${index}`} text={group.instruction} {...passageProps} as="div" className="text-sm text-gray-700" />
+                                        <div className="text-sm text-gray-700">
+                                            <InteractivePassage id={`instruction-${index}`} text={group.instruction} {...passageProps} as="div" />
+                                        </div>
                                     </div>
                                     <div className="space-y-4">
                                         {group.questions.map(question => (
@@ -626,4 +640,3 @@ export default function MockTestPage() {
     </>
   );
 }
-
