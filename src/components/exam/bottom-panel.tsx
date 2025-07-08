@@ -30,7 +30,7 @@ const getPartFromIndex = (index: number): number => {
 };
 
 const getQuestionsForPart = (questions: QuestionState[], part: number): QuestionState[] => {
-    if (!questions) return [];
+    if (!questions || questions.length === 0) return [];
     if (part === 1) return questions.slice(0, 13);
     if (part === 2) return questions.slice(13, 26);
     return questions.slice(26, 40);
@@ -70,7 +70,7 @@ export function BottomPanel({
         return (
             <Button 
                 variant="outline" 
-                className="bg-gray-200 border-gray-400" 
+                className="bg-gray-200 border-gray-400 whitespace-nowrap" 
                 onClick={() => onSelectQuestion(getStartIndexForPart(partNumber))}
             >
                 Part {partNumber}: {answeredCount} of {partQuestions.length} questions
@@ -114,25 +114,27 @@ export function BottomPanel({
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-20 border-t bg-gray-100 font-exam p-2 flex items-center justify-between gap-4 shadow-top">
-      {/* Action Buttons */}
-      <div className="flex items-center gap-3 pr-2">
-        <Button variant="outline" size="icon" className="h-10 w-10 border-2 border-gray-400 bg-gray-200" onClick={onReview} disabled={isSubmitted}>
-          <Flag className="h-5 w-5 text-yellow-600" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-2 border-gray-400 bg-gray-200" onClick={onPrev} disabled={currentQuestionIndex === 0 || isSubmitted}>
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-2 border-gray-400 bg-gray-200" onClick={onNext} disabled={currentQuestionIndex === questions.length - 1 || isSubmitted}>
-          <ArrowRight className="h-6 w-6" />
-        </Button>
-      </div>
+        {/* Question Palette - Flexible */}
+        <div className="flex-grow flex-shrink min-w-0">
+            <div className="flex items-center gap-3">
+                {renderPart(1)}
+                {renderPart(2)}
+                {renderPart(3)}
+            </div>
+        </div>
 
-      {/* Question Palette */}
-      <div className="flex-grow flex items-center gap-3">
-        {renderPart(1)}
-        {renderPart(2)}
-        {renderPart(3)}
-      </div>
+        {/* Action Buttons - Fixed */}
+        <div className="flex-shrink-0 flex items-center gap-3 pr-2">
+            <Button variant="outline" size="icon" className="h-10 w-10 border-2 border-gray-400 bg-gray-200" onClick={onReview} disabled={isSubmitted}>
+                <Flag className="h-5 w-5 text-yellow-600" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-2 border-gray-400 bg-gray-200" onClick={onPrev} disabled={currentQuestionIndex === 0 || isSubmitted}>
+                <ArrowLeft className="h-6 w-6" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-2 border-gray-400 bg-gray-200" onClick={onNext} disabled={currentQuestionIndex === questions.length - 1 || isSubmitted}>
+                <ArrowRight className="h-6 w-6" />
+            </Button>
+        </div>
     </footer>
   );
 }
