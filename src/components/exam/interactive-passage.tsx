@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import Draggable from 'react-draggable';
-import { X } from 'lucide-react';
+import { X, Pencil } from 'lucide-react';
 
 
 // --- TYPES ---
@@ -54,7 +54,7 @@ const ContextMenuPopup = ({ state, annotations, onHighlight, onNote, onClear, on
             {state.type === 'selection' && (
                 <>
                     <button onClick={onHighlight} className="text-left px-4 py-2 hover:bg-gray-100">Highlight</button>
-                    <button onClick={onNote} className="text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>Notes</button>
+                    <button onClick={onNote} className="text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"><Pencil className="h-4 w-4" />Notes</button>
                 </>
             )}
             {state.type === 'annotation' && currentAnnotation && (
@@ -71,44 +71,44 @@ const ContextMenuPopup = ({ state, annotations, onHighlight, onNote, onClear, on
 };
 
 
-const NotesPanel = ({ noteText, onClose, onSave }: { noteText: string; onClose: () => void; onSave: (text: string) => void; }) => {
+const StickyNotePanel = ({ noteText, onClose, onSave }: { noteText: string; onClose: () => void; onSave: (text: string) => void; }) => {
   const nodeRef = useRef(null);
   const [text, setText] = useState(noteText);
   const [isSaving, setIsSaving] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const charLimit = 1000;
   
-  const handleSave = () => {
-    setIsSaving(true);
+  const handleSaveAndClose = () => {
+    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     onSave(text);
-    setTimeout(() => setIsSaving(false), 500); // Visual feedback
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    onClose();
   };
   
   useEffect(() => {
     // Auto-save logic
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-        handleSave();
-    }, 10000); // Auto-save every 10 seconds
+    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    autoSaveTimeoutRef.current = setTimeout(() => {
+        onSave(text);
+        setIsSaving(true);
+        setTimeout(() => setIsSaving(false), 1000);
+    }, 2000); // Auto-save after 2 seconds of inactivity
 
     return () => {
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text]);
+  }, [text, onSave]);
 
   return (
     <Draggable handle=".handle" nodeRef={nodeRef} bounds="parent">
         <div ref={nodeRef} className="fixed z-40 w-[300px]" data-popup="true">
-            <div className="h-[400px] flex flex-col bg-[#fffacd] border-gray-400 shadow-2xl rounded-md overflow-hidden">
-                <div className="handle flex flex-row items-center justify-between p-3 bg-yellow-200/50 cursor-move border-b border-yellow-400/50">
+            <div className="h-[400px] flex flex-col bg-yellow-100 border border-yellow-400 shadow-2xl rounded-md overflow-hidden">
+                <div className="handle flex flex-row items-center justify-between p-3 bg-yellow-200 cursor-move border-b border-yellow-400/50">
                     <h3 className="text-base font-semibold text-gray-800">Note</h3>
                     <Button 
                         variant="ghost" 
                         size="icon" 
                         className="h-6 w-6" 
-                        onClick={onClose}
+                        onClick={handleSaveAndClose}
                         onMouseDown={(e) => e.stopPropagation()}
                     >
                         <X className="h-4 w-4" />
@@ -122,9 +122,9 @@ const NotesPanel = ({ noteText, onClose, onSave }: { noteText: string; onClose: 
                         onChange={(e) => setText(e.target.value)}
                         maxLength={charLimit}
                     />
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center px-1">
                          <span className="text-xs text-gray-500">{text.length} / {charLimit}</span>
-                         <Button onClick={handleSave} size="sm" className="self-end" disabled={isSaving}>
+                         <Button onClick={handleSaveAndClose} size="sm" className="self-end bg-yellow-400 hover:bg-yellow-500 text-black">
                             {isSaving ? 'Saved!' : 'Save & Close'}
                          </Button>
                     </div>
@@ -265,8 +265,11 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     setAnnotations(prev => prev.map(ann => 
         ann.id === annotationId ? { ...ann, noteText: text, type: 'note' } : ann
     ));
-    setNotesPanel({visible: false, annotationId: '', noteText: ''});
   };
+  
+  const handleCloseNotePanel = () => {
+    setNotesPanel({visible: false, annotationId: '', noteText: ''});
+  }
 
   const removeAnnotation = (id: string) => {
     setAnnotations(annotations.filter(h => h.id !== id));
@@ -317,7 +320,6 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
       parts.push(text.substring(lastIndex));
     }
     return parts;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, annotations]);
 
 
@@ -341,9 +343,9 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
 
       {notesPanel.visible && (
           <div className='absolute inset-0' data-popup="true">
-            <NotesPanel 
+            <StickyNotePanel 
                 noteText={notesPanel.noteText}
-                onClose={() => setNotesPanel(prev => ({...prev, visible: false}))}
+                onClose={handleCloseNotePanel}
                 onSave={(text) => {
                     handleUpdateNote(notesPanel.annotationId, text);
                 }}
