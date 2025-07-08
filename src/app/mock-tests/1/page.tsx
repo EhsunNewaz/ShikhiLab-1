@@ -361,7 +361,7 @@ function QuestionPanel({
       <div className="p-4 border-b">
         <h2 className="font-bold text-lg">{questionRangeText}</h2>
         <div className="text-sm text-gray-600 mt-1">
-          <InteractivePassage id={`instruction-${firstQuestion.id}`} text={firstQuestion.instruction} {...passageProps} />
+          <InteractivePassage id={`instruction-${firstQuestion.id}`} text={firstQuestion.instruction} {...passageProps} as="div" />
         </div>
       </div>
       <div className="space-y-1 p-2">
@@ -476,13 +476,6 @@ export default function MockTestPage() {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const handleTimeUp = useCallback(() => {
-    if (!isSubmitted) {
-        console.log('Time is up! Submitting test.');
-        handleSubmit();
-    }
-  }, [isSubmitted, handleSubmit]);
-  
   const handleSubmit = async () => {
     setShowSubmitDialog(false);
     if (isSubmitted) return;
@@ -539,6 +532,13 @@ export default function MockTestPage() {
     }
   }
 
+  const handleTimeUp = useCallback(() => {
+    if (!isSubmitted) {
+        console.log('Time is up! Submitting test.');
+        handleSubmit();
+    }
+  }, [isSubmitted, handleSubmit]);
+  
   const handleSelectQuestion = (index: number) => {
       setCurrentQuestionIndex(index);
   };
