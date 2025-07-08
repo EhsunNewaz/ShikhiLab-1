@@ -69,8 +69,7 @@ export default {
         'exam-orange': '#FF9800',
         'exam-orange-hover': '#e68900',
         'exam-yellow': '#FFC107',
-        'exam-highlight-bg': '#ffff00',
-        'exam-highlight-border': '#ffd700',
+        'exam-highlight': 'rgba(255, 255, 0, 0.8)',
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',

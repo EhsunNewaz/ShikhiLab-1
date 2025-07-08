@@ -35,6 +35,7 @@ interface NotesPanelState {
 }
 
 interface InteractivePassageProps {
+  id: string;
   text: string;
   as?: React.ElementType;
   className?: string;
@@ -136,12 +137,36 @@ const NotesPanel = ({ noteText, onClose, onSave }: { noteText: string; onClose: 
 
 
 // --- MAIN COMPONENT ---
-export function InteractivePassage({ text, as: Comp = 'div', className }: InteractivePassageProps) {
+export function InteractivePassage({ id, text, as: Comp = 'div', className }: InteractivePassageProps) {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ x: 0, y: 0, visible: false, type: 'selection' });
   const [notesPanel, setNotesPanel] = useState<NotesPanelState>({ visible: false, annotationId: '', noteText: ''});
   const passageRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  const storageKey = `passage-annotations-${id}`;
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedAnnotations = window.localStorage.getItem(storageKey);
+      if (savedAnnotations) {
+        setAnnotations(JSON.parse(savedAnnotations));
+      }
+    } catch (error) {
+      console.error("Failed to load annotations from localStorage", error);
+    }
+  }, [storageKey]);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(annotations));
+    } catch (error) {
+      console.error("Failed to save annotations to localStorage", error);
+    }
+  }, [annotations, storageKey]);
+
 
   const hideAllPopups = () => {
     setContextMenu(prev => ({ ...prev, visible: false }));

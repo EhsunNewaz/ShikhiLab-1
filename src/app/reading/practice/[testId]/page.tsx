@@ -70,7 +70,11 @@ export default function ReadingPracticePage() {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[calc(100vh-16rem)] pr-4">
-              <InteractivePassage text={testData.passages[0]} className="max-w-none font-body text-base leading-relaxed" />
+              <InteractivePassage 
+                id={`annotations-${testData.id}-passage-0`}
+                text={testData.passages[0]} 
+                className="max-w-none font-body text-base leading-relaxed" 
+              />
             </ScrollArea>
           </CardContent>
         </Card>
