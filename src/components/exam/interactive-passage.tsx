@@ -216,7 +216,7 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
         setContextMenu({
             visible: true,
             x: rect.left + window.scrollX,
-            y: rect.top + window.scrollY,
+            y: rect.bottom + window.scrollY + 5,
             type: 'annotation',
             annotationId: annotationId,
         });
@@ -241,7 +241,7 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     setContextMenu({
         visible: true,
         x: rect.left + window.scrollX,
-        y: rect.top + window.scrollY,
+        y: rect.bottom + window.scrollY + 5,
         type: 'selection',
         selection: offsets,
     });
