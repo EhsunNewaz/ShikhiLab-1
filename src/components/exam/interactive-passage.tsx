@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, type MouseEvent } from 'react';
+import { cn } from '@/lib/utils';
 
 interface Highlight {
   id: string;
@@ -9,133 +10,182 @@ interface Highlight {
   end: number;
 }
 
-interface ContextMenuState {
+interface TempHighlight {
+  start: number;
+  end: number;
+}
+
+interface PopupState {
   x: number;
   y: number;
   visible: boolean;
-  selection: Selection | null;
-  targetHighlightId: string | null;
 }
 
 interface InteractivePassageProps {
   text: string;
 }
 
-const ContextMenu = ({ x, y, options }: { x: number; y: number; options: { label: string; action: () => void }[] }) => {
+const SelectionPopup = ({
+  x,
+  y,
+  onHighlight,
+  onNote,
+}: {
+  x: number;
+  y: number;
+  onHighlight: () => void;
+  onNote: () => void;
+}) => {
   return (
     <div
-      className="absolute z-50 w-48 rounded-md border bg-white shadow-lg"
-      style={{ top: y, left: x }}
+      className="absolute z-50 flex items-center rounded-md shadow-lg bg-[#2C3E50] text-white font-sans"
+      style={{ top: y, left: x, transform: 'translateX(-50%)' }}
+      data-popup="true"
     >
-      <ul className="py-1">
-        {options.map((option) => (
-          <li key={option.label}>
-            <button
-              onClick={option.action}
-              className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-            >
-              {option.label}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <button onClick={onNote} className="px-4 py-2 text-sm hover:bg-black/20 rounded-l-md">
+        Note
+      </button>
+      <div className="w-px h-4 bg-white/30"></div>
+      <button onClick={onHighlight} className="px-4 py-2 text-sm hover:bg-black/20 rounded-r-md">
+        Highlight
+      </button>
     </div>
   );
 };
 
-
 export function InteractivePassage({ text }: InteractivePassageProps) {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>({ x: 0, y: 0, visible: false, selection: null, targetHighlightId: null });
+  const [tempHighlight, setTempHighlight] = useState<TempHighlight | null>(null);
+  const [popup, setPopup] = useState<PopupState>({ x: 0, y: 0, visible: false });
   const passageRef = useRef<HTMLDivElement>(null);
 
+  // Combines permanent and temporary highlights for rendering
+  const allAnnotations = useMemo(() => {
+    const annotations = highlights.map(h => ({ ...h, type: 'permanent' as const }));
+    if (tempHighlight) {
+      annotations.push({ ...tempHighlight, id: 'temp', type: 'temporary' as const });
+    }
+    return annotations.sort((a, b) => a.start - b.start);
+  }, [highlights, tempHighlight]);
+
+  // Hide popup on any outside click
   useEffect(() => {
-    const handleClick = () => setContextMenu((prev) => ({ ...prev, visible: false }));
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, []);
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
+      if (popup.visible) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[data-popup="true"]')) {
+          setPopup(prev => ({ ...prev, visible: false }));
+          setTempHighlight(null);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [popup.visible]);
 
-  const handleContextMenu = (event: MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
+  const getSelectionOffsets = (container: HTMLElement) => {
     const selection = window.getSelection();
-    const targetElement = event.target as HTMLElement;
-    const highlightSpan = targetElement.closest('[data-highlight-id]');
-    const highlightId = highlightSpan ? highlightSpan.getAttribute('data-highlight-id') : null;
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+    
+    const range = selection.getRangeAt(0);
+    if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null;
 
-    setContextMenu({ x: event.pageX, y: event.pageY, visible: true, selection, targetHighlightId: highlightId });
+    let startOffset = -1;
+    let endOffset = -1;
+    let accumulatedLength = 0;
+
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+        const nodeLength = node.textContent?.length || 0;
+        if (startOffset === -1 && node === range.startContainer) {
+            startOffset = accumulatedLength + range.startOffset;
+        }
+        if (node === range.endContainer) {
+            endOffset = accumulatedLength + range.endOffset;
+            break;
+        }
+        accumulatedLength += nodeLength;
+    }
+    
+    if (startOffset !== -1 && endOffset !== -1) {
+        return { start: startOffset, end: endOffset };
+    }
+    return null;
   };
+  
+  const handleMouseUp = () => {
+    const selection = window.getSelection();
+    if (!passageRef.current || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        return;
+    }
 
-  const addHighlight = () => {
-    const selection = contextMenu.selection;
-    if (!selection || !passageRef.current) return;
+    const offsets = getSelectionOffsets(passageRef.current);
+    if (!offsets) return;
+
+    const isOverlapping = highlights.some(h => (offsets.start < h.end && offsets.end > h.start));
+    if (isOverlapping) return;
 
     const range = selection.getRangeAt(0);
-    const container = passageRef.current;
+    const rect = range.getBoundingClientRect();
+    const containerRect = passageRef.current.getBoundingClientRect();
     
-    // Find the absolute start and end positions relative to the container div
-    let absoluteStart = 0, absoluteEnd = 0;
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
-    let currentNode = walker.nextNode();
-    let offset = 0;
-    let foundStart = false;
-
-    while(currentNode) {
-      if (currentNode === range.startContainer) {
-        absoluteStart = offset + range.startOffset;
-        foundStart = true;
-      }
-      if (currentNode === range.endContainer) {
-        absoluteEnd = offset + range.endOffset;
-        break;
-      }
-      if (!foundStart) {
-        offset += currentNode.textContent?.length || 0;
-      } else {
-        offset += currentNode.textContent?.length || 0;
-      }
-      currentNode = walker.nextNode();
-    }
-    
-    const isOverlapping = highlights.some(h => (absoluteStart < h.end && absoluteEnd > h.start));
-    if (isOverlapping) {
-      return;
-    }
-    
-    setHighlights([...highlights, { id: crypto.randomUUID(), start: absoluteStart, end: absoluteEnd }]);
-    setContextMenu(prev => ({...prev, visible: false}));
+    setPopup({
+        visible: true,
+        x: rect.left - containerRect.left + rect.width / 2,
+        y: rect.top - containerRect.top - 45, // Position above selection
+    });
+    setTempHighlight(offsets);
     selection.removeAllRanges();
   };
 
-  const clearHighlight = () => {
-    if (!contextMenu.targetHighlightId) return;
-    setHighlights(highlights.filter(h => h.id !== contextMenu.targetHighlightId));
-    setContextMenu(prev => ({ ...prev, visible: false }));
+  const handlePermanentHighlight = () => {
+    if (!tempHighlight) return;
+    const isOverlapping = highlights.some(h => (tempHighlight.start < h.end && tempHighlight.end > h.start));
+    if (isOverlapping) return;
+
+    setHighlights(prev => [...prev, { ...tempHighlight, id: crypto.randomUUID() }]);
+    setTempHighlight(null);
+    setPopup(prev => ({ ...prev, visible: false }));
   };
 
-  const clearAllHighlights = () => {
-    setHighlights([]);
-    setContextMenu(prev => ({...prev, visible: false}));
+  const handleNote = () => {
+     if (!tempHighlight) return;
+     console.log('Note action for text range:', tempHighlight);
+     // For now, we'll just make it a highlight as well
+     handlePermanentHighlight();
+  };
+
+  const clearHighlight = (id: string) => {
+    setHighlights(highlights.filter(h => h.id !== id));
   };
 
   const renderedPassage = useMemo(() => {
-    if (highlights.length === 0) {
+    if (allAnnotations.length === 0) {
       return text;
     }
 
-    const sortedHighlights = [...highlights].sort((a, b) => a.start - b.start);
     const parts = [];
     let lastIndex = 0;
 
-    sortedHighlights.forEach(highlight => {
-      if (highlight.start > lastIndex) {
-        parts.push(text.substring(lastIndex, highlight.start));
+    allAnnotations.forEach(annotation => {
+      if (annotation.start > lastIndex) {
+        parts.push(text.substring(lastIndex, annotation.start));
       }
       parts.push(
-        <span key={highlight.id} className="text-highlight" data-highlight-id={highlight.id}>
-          {text.substring(highlight.start, highlight.end)}
+        <span
+          key={annotation.id}
+          className={cn({
+            'bg-[#FFFF99] cursor-pointer': annotation.type === 'permanent',
+            'bg-green-300/70': annotation.type === 'temporary',
+          })}
+          data-highlight-id={annotation.id}
+          onClick={() => annotation.type === 'permanent' && clearHighlight(annotation.id)}
+        >
+          {text.substring(annotation.start, annotation.end)}
         </span>
       );
-      lastIndex = highlight.end;
+      lastIndex = annotation.end;
     });
 
     if (lastIndex < text.length) {
@@ -143,30 +193,25 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
     }
     
     return parts;
-  }, [text, highlights]);
-  
-  const contextMenuOptions = useMemo(() => {
-    if (contextMenu.targetHighlightId) {
-        return [
-            { label: 'Clear Highlight', action: clearHighlight },
-            { label: 'Clear All Highlights', action: clearAllHighlights },
-        ]
-    }
-    if (contextMenu.selection && contextMenu.selection.toString().trim().length > 0) {
-        return [
-            { label: 'Highlight', action: addHighlight },
-            { label: 'Clear All Highlights', action: clearAllHighlights },
-        ]
-    }
-    return [{ label: 'Clear All Highlights', action: clearAllHighlights }];
-  }, [contextMenu, highlights]);
+  }, [text, allAnnotations]);
 
   return (
-    <div onContextMenu={handleContextMenu}>
-      <div ref={passageRef} className="max-w-none whitespace-pre-wrap font-body text-base leading-relaxed">
+    <div className="relative">
+      <div
+        ref={passageRef}
+        className="max-w-none whitespace-pre-wrap font-body text-base leading-relaxed"
+        onMouseUp={handleMouseUp}
+      >
         {renderedPassage}
       </div>
-      {contextMenu.visible && contextMenuOptions.length > 0 && <ContextMenu x={contextMenu.x} y={contextMenu.y} options={contextMenuOptions} />}
+      {popup.visible && tempHighlight && (
+        <SelectionPopup
+            x={popup.x}
+            y={popup.y}
+            onHighlight={handlePermanentHighlight}
+            onNote={handleNote}
+        />
+      )}
     </div>
   );
 }
