@@ -9,10 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 import { ExamShell } from '@/components/exam/exam-shell';
 import { SplitScreenLayout } from '@/components/exam/split-screen-layout';
 import { InteractivePassage, type Annotation } from '@/components/exam/interactive-passage';
-import { readingTestData, type ReadingQuestion as ReadingQuestionData } from '@/lib/course-data';
+import { readingTestData, type ReadingQuestion as ReadingQuestionData, type SubQuestion } from '@/lib/course-data';
 import { ExamInput } from '@/components/exam/form-elements/exam-input';
 import { ExamRadioGroup, ExamRadioGroupItem } from '@/components/exam/form-elements/exam-radio-group';
 import { ExamCheckbox } from '@/components/exam/form-elements/exam-checkbox';
+import { ExamSelect, ExamSelectTrigger, ExamSelectContent, ExamSelectItem, ExamSelectValue } from '@/components/exam/form-elements/exam-select';
 import { cn } from '@/lib/utils';
 import { SubmitConfirmationDialog } from '@/components/exam/submit-confirmation-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,17 +76,7 @@ function QuestionRenderer({
   scrollToAnnotationId: string | null;
   onScrollComplete: () => void;
 }) {
-  let isCorrect = false;
-  if (isSubmitted) {
-    if (question.type === 'multiple-answer') {
-      const userAnswerSorted = [...(answer || [])].sort();
-      const correctAnswerSorted = [...(question.correctAnswer || [])].sort();
-      isCorrect = JSON.stringify(userAnswerSorted) === JSON.stringify(correctAnswerSorted);
-    } else {
-      isCorrect = JSON.stringify(answer) === JSON.stringify(question.correctAnswer);
-    }
-  }
-  
+
   const passageProps = {
     annotations,
     setAnnotations,
@@ -93,19 +84,53 @@ function QuestionRenderer({
     onScrollComplete,
   };
 
-  const renderFeedback = () => {
+  const isCorrect = useMemo(() => {
+    if (!isSubmitted) return false;
+    
+    if (question.type === 'multiple-answer') {
+        const userAnswerSorted = [...(answer || [])].sort();
+        const correctAnswerSorted = [...(question.correctAnswer || [])].sort();
+        return JSON.stringify(userAnswerSorted) === JSON.stringify(correctAnswerSorted);
+    }
+    if (question.type === 'matching-headings') {
+        if (typeof answer !== 'object' || answer === null) return false;
+        // For matching, we check if all sub-questions are correct. This is complex.
+        // A simpler approach for the "isCorrect" flag is to not show it at the group level.
+        // Feedback is shown per item.
+        return false;
+    }
+    return JSON.stringify(answer).toLowerCase() === JSON.stringify(question.correctAnswer).toLowerCase();
+  }, [isSubmitted, answer, question.correctAnswer, question.type]);
+
+  
+  const renderFeedback = (subQuestionId?: string) => {
     if (!isSubmitted) return null;
+
+    let subIsCorrect: boolean;
+    let subCorrectAnswer: string;
+    let subExplanation: string | undefined;
+
+    if (subQuestionId && question.type === 'matching-headings') {
+        subCorrectAnswer = question.correctAnswer[subQuestionId];
+        subIsCorrect = answer?.[subQuestionId] === subCorrectAnswer;
+        subExplanation = question.explanation; // Main explanation applies to all
+    } else {
+        subIsCorrect = isCorrect;
+        subCorrectAnswer = Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer;
+        subExplanation = question.explanation
+    }
+    
     return (
-      <div className="mt-4 p-3 text-sm bg-muted/50 rounded-lg border">
-        {!isCorrect && (
+      <div className={cn("mt-4 p-3 text-sm rounded-lg border", subIsCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200")}>
+        {!subIsCorrect && (
           <p className="font-semibold text-destructive">
             Correct Answer: <span className="font-normal">
-              {Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}
+              {subCorrectAnswer}
             </span>
           </p>
         )}
         <p className="font-semibold mt-2">Explanation:</p>
-        <p>{question.explanation}</p>
+        <p>{subExplanation}</p>
       </div>
     );
   };
@@ -113,11 +138,12 @@ function QuestionRenderer({
 
   switch (question.type) {
     case 'fill-in-the-blank':
+        const parts = question.questionText?.split('___') || ['',''];
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <Label htmlFor={question.id}>
-              <InteractivePassage id={`q-${question.id}-pre`} text={question.questionText.split('___')[0]} as="span" {...passageProps} />
+            <Label htmlFor={question.id} className="leading-snug">
+              <InteractivePassage id={`q-${question.id}-pre`} text={parts[0]} as="span" {...passageProps} />
             </Label>
             <ExamInput
               id={question.id}
@@ -126,36 +152,48 @@ function QuestionRenderer({
               disabled={isSubmitted}
               className={cn(isSubmitted && (isCorrect ? 'border-green-500' : 'border-destructive'))}
             />
-            <Label htmlFor={question.id}>
-              <InteractivePassage id={`q-${question.id}-post`} text={question.questionText.split('___')[1]} as="span" {...passageProps} />
-            </Label>
+            {parts[1] && <Label htmlFor={question.id} className="leading-snug">
+                <InteractivePassage id={`q-${question.id}-post`} text={parts[1]} as="span" {...passageProps} />
+            </Label>}
           </div>
           {renderFeedback()}
         </div>
       );
     case 'multiple-choice':
+    case 'true-false-not-given':
+    case 'yes-no-not-given':
       return (
          <div className="space-y-4">
             <div className="font-semibold">
-              <InteractivePassage id={`q-${question.id}`} text={question.questionText} {...passageProps} />
+              <InteractivePassage id={`q-${question.id}`} text={question.questionText!} {...passageProps} />
             </div>
             <ExamRadioGroup
               value={answer}
               onValueChange={(value) => onAnswerChange(question.id, value)}
               disabled={isSubmitted}
-              className="space-y-2"
+              className={cn("space-y-2", question.type !== 'multiple-choice' && "flex items-center gap-2")}
             >
-              {question.options.map(opt => {
+              {question.options!.map(opt => {
                  const isSelected = answer === opt;
                  const isCorrectOption = question.correctAnswer === opt;
                  return (
                     <div key={opt} className={cn(
-                        "flex items-center space-x-2 p-3 rounded-lg border",
-                        isSubmitted && isCorrectOption && "bg-green-100 border-green-500",
-                        isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500",
-                        !isSubmitted && "bg-background"
+                        "flex items-center space-x-2 rounded-lg",
+                        question.type === 'multiple-choice' && "p-3 border",
+                        isSubmitted && isCorrectOption && question.type === 'multiple-choice' && "bg-green-100 border-green-500",
+                        isSubmitted && !isCorrectOption && isSelected && question.type === 'multiple-choice' && "bg-red-100 border-red-500",
+                        !isSubmitted && question.type === 'multiple-choice' && "bg-background"
                     )}>
-                        <ExamRadioGroupItem value={opt} id={`${question.id}-${opt}`} label={opt} disabled={isSubmitted} passageProps={passageProps}/>
+                        <ExamRadioGroupItem 
+                            value={opt} 
+                            id={`${question.id}-${opt}`} 
+                            label={opt} 
+                            disabled={isSubmitted} 
+                            passageProps={passageProps}
+                            variant={question.type !== 'multiple-choice' ? 'button' : 'default'}
+                            isCorrect={isSubmitted && isCorrectOption}
+                            isSelected={isSelected}
+                        />
                     </div>
                 )
               })}
@@ -173,13 +211,16 @@ function QuestionRenderer({
         }
         onAnswerChange(question.id, Array.from(currentAnswers).sort());
       };
+      const selectedCount = (answer || []).length;
+      const requiredCount = question.requiredAnswers || 0;
       return (
          <div className="space-y-4">
-            <div className="font-semibold">
-              <InteractivePassage id={`q-${question.id}`} text={question.questionText} {...passageProps} />
+            <div className="font-semibold flex items-center justify-between">
+              <InteractivePassage id={`q-${question.id}`} text={question.questionText!} {...passageProps} />
+              {requiredCount > 0 && <Badge variant={selectedCount === requiredCount ? "default" : "secondary"}>{selectedCount} of {requiredCount} selected</Badge>}
             </div>
             <div className="flex flex-col gap-2">
-              {question.options.map(opt => {
+              {question.options!.map(opt => {
                 const isSelected = (answer || []).includes(opt);
                 const isCorrectOption = (question.correctAnswer || []).includes(opt);
                  return (
@@ -204,6 +245,53 @@ function QuestionRenderer({
             {renderFeedback()}
         </div>
       );
+    case 'matching-headings':
+        const handleMatchingChange = (subQuestionId: string, value: string) => {
+            const currentGroupAnswers = answer || {};
+            onAnswerChange(question.id, {
+                ...currentGroupAnswers,
+                [subQuestionId]: value
+            });
+        };
+        return (
+            <div className="space-y-4">
+                <div className="font-semibold">
+                    <InteractivePassage id={`q-${question.id}`} text={question.instruction} {...passageProps} />
+                </div>
+                <div className="space-y-6">
+                    {question.subQuestions?.map(subQ => {
+                        const subIsCorrect = isSubmitted && answer?.[subQ.id] === question.correctAnswer[subQ.id];
+                        return (
+                            <div key={subQ.id}>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 space-y-2 sm:space-y-0">
+                                    <div className="flex-1">
+                                        <span className="font-bold mr-2">{subQ.id}</span>
+                                        <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="span" {...passageProps} />
+                                    </div>
+                                    <ExamSelect
+                                        value={answer?.[subQ.id] || ''}
+                                        onValueChange={(val) => handleMatchingChange(subQ.id, val)}
+                                        disabled={isSubmitted}
+                                    >
+                                        <ExamSelectTrigger className={cn(
+                                            isSubmitted && (subIsCorrect ? 'border-green-500' : 'border-destructive')
+                                        )}>
+                                            <ExamSelectValue placeholder="Choose..." />
+                                        </ExamSelectTrigger>
+                                        <ExamSelectContent>
+                                            {question.matchingOptions?.map((opt, idx) => (
+                                                <ExamSelectItem key={idx} value={opt}>{opt}</ExamSelectItem>
+                                            ))}
+                                        </ExamSelectContent>
+                                    </ExamSelect>
+                                </div>
+                                {isSubmitted && renderFeedback(subQ.id)}
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+        )
     default:
       return <p>Unsupported question type</p>;
   }
@@ -229,17 +317,36 @@ function QuestionPanel({
   if (!questionGroup || questionGroup.length === 0) {
     return null;
   }
+  
   const firstQuestion = questionGroup[0];
   const lastQuestion = questionGroup[questionGroup.length - 1];
-  const questionRange =
-    questionGroup.length > 1
-      ? `Questions ${firstQuestion.id} - ${lastQuestion.id}`
-      : `Question ${firstQuestion.id}`;
+
+  let questionRangeText = '';
+
+    if (questionGroup.length > 1) {
+        const firstId = parseInt(firstQuestion.id.split('-')[0]);
+        let lastIdNum = parseInt(lastQuestion.id.split('-')[0]);
+
+        if (lastQuestion.subQuestions && lastQuestion.subQuestions.length > 0) {
+           lastIdNum = parseInt(lastQuestion.subQuestions[lastQuestion.subQuestions.length -1].id);
+        } else if (lastQuestion.id.includes('-')) {
+            lastIdNum = parseInt(lastQuestion.id.split('-')[1]);
+        }
+        
+        questionRangeText = `Questions ${firstId}-${lastIdNum}`;
+
+    } else if (firstQuestion.subQuestions) {
+        const subQs = firstQuestion.subQuestions;
+        questionRangeText = `Questions ${subQs[0].id}-${subQs[subQs.length-1].id}`
+    } else {
+        questionRangeText = `Question ${firstQuestion.id}`;
+    }
+
 
   return (
     <Card className="font-exam">
       <CardHeader>
-        <CardTitle>{questionRange}</CardTitle>
+        <CardTitle>{questionRangeText}</CardTitle>
         <CardDescription>
           <InteractivePassage id={`instruction-${firstQuestion.id}`} text={firstQuestion.instruction} {...passageProps} />
         </CardDescription>
@@ -318,12 +425,27 @@ export default function MockTestPage() {
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
+  const totalQuestions = useMemo(() => {
+    return initialQuestions.reduce((acc, q) => {
+        return acc + (q.subQuestions?.length || 1);
+    }, 0);
+  }, []);
+
   const questionsWithStatus = useMemo((): QuestionState[] => {
-    return initialQuestions.map(q => ({
-        ...q,
-        status: (Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : !!answers[q.id]) ? 'answered' : 'unanswered',
-        isReviewed: reviewedQuestions.has(q.id)
-    }))
+    return initialQuestions.map(q => {
+        let isAnswered = false;
+        if (q.subQuestions) {
+            const answeredCount = q.subQuestions.filter(subQ => !!answers[q.id]?.[subQ.id]).length;
+            isAnswered = answeredCount > 0; // Consider answered if at least one sub-question is answered
+        } else {
+             isAnswered = (Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : !!answers[q.id]);
+        }
+        return {
+            ...q,
+            status: isAnswered ? 'answered' : 'unanswered',
+            isReviewed: reviewedQuestions.has(q.id)
+        }
+    })
   }, [answers, reviewedQuestions]);
 
   const handleAnswerChange = (questionId: string, value: any) => {
@@ -351,14 +473,23 @@ export default function MockTestPage() {
             if (JSON.stringify(userAnswerSorted) === JSON.stringify(correctAnswerSorted)) {
                 calculatedScore++;
             }
-        } else if (JSON.stringify(userAnswer) === JSON.stringify(q.correctAnswer)) {
+        } else if (q.type === 'matching-headings') {
+            if (typeof userAnswer === 'object' && userAnswer !== null) {
+                for(const subQ of q.subQuestions!) {
+                    if (userAnswer[subQ.id] === q.correctAnswer[subQ.id]) {
+                        calculatedScore++;
+                    }
+                }
+            }
+        } else if (userAnswer && q.correctAnswer && JSON.stringify(userAnswer).toLowerCase() === JSON.stringify(q.correctAnswer).toLowerCase()) {
             calculatedScore++;
         }
     }
     setScore(calculatedScore);
     setIsSubmitted(true);
     window.localStorage.removeItem(answerStorageKey);
-    window.localStorage.removeItem(annotationStorageKey);
+    // Keep annotations after submission for review
+    // window.localStorage.removeItem(annotationStorageKey);
 
     // If user is logged in, save the result to Firestore
     if (user && db?.app) {
@@ -366,7 +497,7 @@ export default function MockTestPage() {
       const newResult = {
         testId: readingTest.id,
         score: calculatedScore,
-        total: initialQuestions.length,
+        total: totalQuestions,
         completedAt: serverTimestamp(),
       };
       try {
@@ -423,6 +554,19 @@ export default function MockTestPage() {
     onScrollComplete
   };
 
+  const getQuestionRangeForPassage = (passageIndex: number) => {
+    const passageQuestions = initialQuestions.filter(q => q.passage === passageIndex + 1);
+    if (passageQuestions.length === 0) return '';
+    
+    const firstQ = passageQuestions[0];
+    const lastQ = passageQuestions[passageQuestions.length - 1];
+    
+    const firstId = firstQ.subQuestions ? firstQ.subQuestions[0].id : firstQ.id.split('-')[0];
+    const lastId = lastQ.subQuestions ? lastQ.subQuestions[lastQ.subQuestions.length - 1].id : lastQ.id.split('-').pop();
+
+    return `${firstId}-${lastId}`;
+  }
+
 
   if (currentPassageIndex === undefined) {
     return <div>Loading test...</div>
@@ -430,10 +574,11 @@ export default function MockTestPage() {
   
   // --- Group questions for display ---
   const currentQuestion = initialQuestions[currentQuestionIndex];
-  // Find the start of the consecutive group of questions with the same instruction
+  // This logic now supports grouping by type as well as instruction
   let groupStartIndex = currentQuestionIndex;
   while (
     groupStartIndex > 0 &&
+    initialQuestions[groupStartIndex - 1].type === currentQuestion.type &&
     initialQuestions[groupStartIndex - 1].instruction === currentQuestion.instruction &&
     initialQuestions[groupStartIndex - 1].passage === currentQuestion.passage
   ) {
@@ -443,6 +588,7 @@ export default function MockTestPage() {
   let groupEndIndex = currentQuestionIndex;
   while (
     groupEndIndex < initialQuestions.length - 1 &&
+    initialQuestions[groupEndIndex + 1].type === currentQuestion.type &&
     initialQuestions[groupEndIndex + 1].instruction === currentQuestion.instruction &&
     initialQuestions[groupEndIndex + 1].passage === currentQuestion.passage
   ) {
@@ -473,7 +619,7 @@ export default function MockTestPage() {
             leftPanel={
                 <div className="space-y-4">
                     <h1 className="text-2xl font-bold text-gray-800">Reading Passage {currentPassageIndex + 1}</h1>
-                    <p className="text-sm text-gray-600">You should spend about 20 minutes on Questions {readingTest.questions.find(q => q.passage === currentPassageIndex + 1)?.id}-{readingTest.questions.filter(q => q.passage === currentPassageIndex + 1).at(-1)?.id}, which are based on the passage below.</p>
+                    <p className="text-sm text-gray-600">You should spend about 20 minutes on Questions {getQuestionRangeForPassage(currentPassageIndex)}, which are based on the passage below.</p>
                     <InteractivePassage
                       id={`passage-${readingTest.id}-${currentPassageIndex}`}
                       text={readingTest.passages[currentPassageIndex]}
@@ -486,7 +632,7 @@ export default function MockTestPage() {
               <>
                 <ScrollArea className="h-full">
                     <div className="space-y-6 p-5 pb-48"> {/* Padding at bottom for floating buttons */}
-                        {isSubmitted && <ResultsCard score={score} total={initialQuestions.length} />}
+                        {isSubmitted && <ResultsCard score={score} total={totalQuestions} />}
                         <QuestionPanel
                             questionGroup={currentQuestionGroup}
                             answers={answers}
@@ -508,3 +654,5 @@ export default function MockTestPage() {
     </>
   );
 }
+
+    

@@ -21,10 +21,42 @@ const ExamRadioGroup = React.forwardRef<
 })
 ExamRadioGroup.displayName = RadioGroupPrimitive.Root.displayName
 
+interface ExamRadioGroupItemProps extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item> {
+  label: string;
+  passageProps: PassageProps;
+  variant?: 'default' | 'button';
+  isCorrect?: boolean;
+  isSelected?: boolean;
+}
+
+
 const ExamRadioGroupItem = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item> & { label: string; passageProps: PassageProps }
->(({ className, label, passageProps, ...props }, ref) => {
+  ExamRadioGroupItemProps
+>(({ className, label, passageProps, variant = 'default', isCorrect, isSelected, ...props }, ref) => {
+  if (variant === 'button') {
+    return (
+       <RadioGroupPrimitive.Item
+        ref={ref}
+        asChild
+        {...props}
+       >
+         <label className={cn(
+             "flex h-9 cursor-pointer select-none items-center justify-center rounded-[4px] border border-exam-border-light bg-white px-4 py-1 text-sm font-semibold transition-colors",
+             "hover:border-exam-green hover:bg-green-50",
+             "focus:border-exam-green focus:outline-none focus:shadow-[0_0_3px_rgba(76,175,80,0.3)]",
+             "disabled:cursor-not-allowed disabled:opacity-50",
+             isSelected && !isCorrect && "border-destructive bg-red-100 text-destructive",
+             isCorrect && "border-green-500 bg-green-100 text-green-800",
+             isSelected && !isCorrect && "border-destructive",
+             className
+         )}>
+            {label}
+         </label>
+       </RadioGroupPrimitive.Item>
+    )
+  }
+  
   return (
     <label className="flex items-center gap-2 font-exam text-sm cursor-pointer select-none">
         <RadioGroupPrimitive.Item
@@ -51,3 +83,5 @@ const ExamRadioGroupItem = React.forwardRef<
 ExamRadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName
 
 export { ExamRadioGroup, ExamRadioGroupItem }
+
+    

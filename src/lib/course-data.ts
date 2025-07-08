@@ -1,6 +1,29 @@
 
 import { BookMarked, Mic, PenSquare, Ear, BookOpen, BookCheck, Repeat, ClipboardCheck } from 'lucide-react';
 
+export type SubQuestion = {
+    id: string;
+    text: string;
+}
+
+export type ReadingQuestion = {
+  id: string; // For single questions, this is the number. For grouped questions, it's a range like "14-18".
+  passage: number;
+  type: 'fill-in-the-blank' | 'multiple-choice' | 'multiple-answer' | 'true-false-not-given' | 'yes-no-not-given' | 'matching-headings';
+  instruction: string;
+  // For single questions
+  questionText?: string; 
+  options?: string[];
+  requiredAnswers?: number; // For multiple-answer
+  // For matching questions
+  matchingOptions?: string[]; // The list of headings/options to match from
+  subQuestions?: SubQuestion[]; // The list of statements to match
+  // For all questions
+  correctAnswer: any; // string for single, string[] for multi-answer, Record<string, string> for matching
+  explanation: string;
+};
+
+
 export type Lesson = {
   id: string;
   title: string;
@@ -22,17 +45,6 @@ export type Module = {
   description: string;
   icon: React.ElementType;
   lessons: Lesson[];
-};
-
-export type ReadingQuestion = {
-  id: string;
-  passage: number; // Which passage (1, 2, or 3) this question belongs to
-  type: 'fill-in-the-blank' | 'multiple-choice' | 'multiple-answer';
-  instruction: string; // "Complete the sentences below.", "Choose the correct letter, A, B, or C."
-  questionText: string; // For fill-in-the-blank, use '___' as placeholder
-  options: string[];
-  correctAnswer: any; // Can be string or string[]
-  explanation: string;
 };
 
 export type ReadingTest = {
@@ -70,7 +82,7 @@ export type ShadowingExercise = {
 }
 
 export type ActiveListeningExercise = {
-    id: string;
+    id:string;
     title: string;
     audioUrl: string;
     transcript: string;
@@ -125,37 +137,6 @@ export const foundationSkills = {
     }
 }
 
-const generateQuestions = (passage: number, startId: number, count: number, type: 'multiple-choice' | 'fill-in-the-blank' | 'multiple-answer' = 'multiple-choice', optionsCount: number = 4): ReadingQuestion[] => {
-    return Array.from({ length: count }, (_, i) => {
-        const id = startId + i;
-        const options = Array.from({ length: optionsCount }, (_, j) => `Option ${String.fromCharCode(65 + j)} for ${id}`);
-        let correctAnswer: any;
-        let questionType = type;
-
-        if (type === 'multiple-answer') {
-            correctAnswer = [options[1], options[2]]; // e.g. B and C
-        } else if (type === 'fill-in-the-blank') {
-            correctAnswer = 'sample';
-        } else {
-            correctAnswer = options[1]; // e.g. B
-        }
-
-        return {
-            id: `${id}`,
-            passage,
-            type: questionType,
-            instruction: type === 'fill-in-the-blank' 
-                ? 'Complete the sentence using ONE WORD from the passage.' 
-                : 'Choose the correct letter, A, B, C, or D.',
-            questionText: type === 'fill-in-the-blank' 
-                ? `This is a sample ___ for question ${id}.`
-                : `What is the main point of the paragraph related to question ${id}?`,
-            options,
-            correctAnswer,
-            explanation: `The correct answer is selected based on the passage's information for question ${id}.`
-        };
-    });
-};
 
 export const readingTestData: ReadingTest[] = [
   {
@@ -167,26 +148,137 @@ The late 20th century witnessed a revolution in communication technologies that 
 Socially, the internet has fostered the growth of virtual communities, connecting individuals with shared interests regardless of their geographical location. Economically, e-commerce has flourished, allowing businesses to reach a global customer base without the need for physical storefronts in every region. Personal relationships have also been transformed; families and friends can maintain close contact despite living thousands of miles apart. However, this hyper-connectivity is not without its drawbacks. Concerns about privacy, the spread of misinformation, and the impact of social media on mental health are significant challenges that society must navigate in this new digital landscape. The very definition of 'community' and 'friendship' is being redefined by these powerful tools.`,
         
         `Passage 2: The Science of Urban Planning.
-Urban planning is a technical and political process concerned with the development and design of land use and the built environment. It involves forecasting population growth, planning for infrastructure like transportation and utilities, and zoning areas for different types of development such as residential, commercial, and industrial. The primary goal of urban planning is to create functional, sustainable, and aesthetically pleasing communities for people to live, work, and play in.
-One of the key challenges in modern urban planning is sustainability. As cities continue to grow, they consume vast amounts of resources and generate significant pollution. Planners are increasingly focused on creating 'green cities' that incorporate renewable energy sources, efficient public transportation systems, and ample green spaces like parks and gardens. Mixed-use development, where residential, commercial, and recreational spaces are integrated, is another popular strategy. This approach reduces the need for long commutes, thereby decreasing traffic congestion and carbon emissions. Furthermore, preserving historical architecture and cultural heritage while accommodating new growth is a delicate balancing act that requires careful consideration and community involvement. Effective urban planning is crucial for managing the complexities of urban life and ensuring a high quality of life for all residents.`,
+A) Urban planning is a technical and political process concerned with the development and design of land use and the built environment. It involves forecasting population growth, planning for infrastructure like transportation and utilities, and zoning areas for different types of development such as residential, commercial, and industrial. The primary goal of urban planning is to create functional, sustainable, and aesthetically pleasing communities for people to live, work, and play in.
+B) One of the key challenges in modern urban planning is sustainability. As cities continue to grow, they consume vast amounts of resources and generate significant pollution. Planners are increasingly focused on creating 'green cities' that incorporate renewable energy sources, efficient public transportation systems, and ample green spaces like parks and gardens.
+C) Mixed-use development, where residential, commercial, and recreational spaces are integrated, is another popular strategy. This approach reduces the need for long commutes, thereby decreasing traffic congestion and carbon emissions. It fosters a sense of community by making neighborhoods more walkable and vibrant.
+D) Furthermore, preserving historical architecture and cultural heritage while accommodating new growth is a delicate balancing act that requires careful consideration and community involvement. Public consultations and stakeholder engagement are crucial to ensure that development projects reflect the values and needs of the residents. Effective urban planning is essential for managing the complexities of urban life and ensuring a high quality of life for all citizens.`,
 
         `Passage 3: The Enigma of Honeybee Navigation.
 Honeybees possess a remarkable ability to navigate the landscape, find flowers, and return to their hive with astonishing precision. This sophisticated navigational skill is crucial for their survival and the pollination of countless plant species. For decades, scientists have been captivated by the question of how these tiny insects achieve such feats. The pioneering research of Karl von Frisch in the mid-20th century revealed one of the primary mechanisms: the 'waggle dance'. This is a form of symbolic communication where a returning forager bee performs a specific pattern of movements to inform its hive-mates of the direction and distance to a food source. The angle of the dance relative to the vertical axis of the honeycomb indicates the direction of the food source in relation to the sun, while the duration of the 'waggling' part of the dance signifies the distance.
 Beyond the waggle dance, bees also rely on a combination of other cues. They have an internal 'sun compass' that allows them to track the sun's position in the sky, even on cloudy days, by detecting patterns of polarized light. They also create and memorize mental maps of their surroundings, using landmarks like trees, rivers, and buildings to orient themselves. This cognitive mapping ability suggests a level of spatial awareness previously thought to be exclusive to larger-brained animals. Recent studies even indicate that bees might be sensitive to the Earth's magnetic field, using it as an additional navigational aid. The honeybee's brain, though no bigger than a sesame seed, integrates these multiple streams of information to create a robust and flexible navigation system.`
     ],
     questions: [
-        // Passage 1: Questions 1-13
-        ...generateQuestions(1, 1, 3, 'multiple-choice'),
-        ...generateQuestions(1, 4, 6, 'fill-in-the-blank'),
-        ...generateQuestions(1, 10, 4, 'multiple-answer', 5),
-        // Passage 2: Questions 14-26
-        ...generateQuestions(2, 14, 7, 'multiple-choice', 3), // T/F/NG
-        ...generateQuestions(2, 21, 6, 'fill-in-the-blank'),
-        // Passage 3: Questions 27-40
-        ...generateQuestions(3, 27, 5, 'multiple-choice'),
-        ...generateQuestions(3, 32, 4, 'multiple-choice', 3), // Y/N/NG
-        ...generateQuestions(3, 36, 5, 'multiple-answer', 6),
-    ].map(q => ({ ...q, id: String(q.id) })),
+        // Passage 1
+        {
+            id: '1',
+            passage: 1,
+            type: 'multiple-choice',
+            instruction: 'Choose the correct letter, A, B, C or D.',
+            questionText: 'What is the main topic of the first paragraph?',
+            options: [ 'The history of postal services', 'The drawbacks of modern technology', 'The evolution of communication technologies', 'The rise of e-commerce'],
+            correctAnswer: 'The evolution of communication technologies',
+            explanation: 'The paragraph introduces the "revolution in communication technologies" and details the shift from older methods to the internet and mobile devices.'
+        },
+        {
+            id: '2',
+            passage: 1,
+            type: 'true-false-not-given',
+            instruction: 'Do the following statements agree with the information given in the passage? Choose TRUE, FALSE or NOT GIVEN.',
+            questionText: 'The internet made long-distance communication possible for the first time.',
+            options: ['TRUE', 'FALSE', 'NOT GIVEN'],
+            correctAnswer: 'FALSE',
+            explanation: 'The passage states that before the internet, long-distance communication relied on "postal services and telephones," meaning it was already possible, just slower.'
+        },
+        {
+            id: '3',
+            passage: 1,
+            type: 'true-false-not-given',
+            instruction: 'Do the following statements agree with the information given in the passage? Choose TRUE, FALSE or NOT GIVEN.',
+            questionText: 'E-commerce has been beneficial for businesses.',
+            options: ['TRUE', 'FALSE', 'NOT GIVEN'],
+            correctAnswer: 'TRUE',
+            explanation: 'The passage explicitly states that "e-commerce has flourished, allowing businesses to reach a global customer base".'
+        },
+        {
+            id: '4',
+            passage: 1,
+            type: 'true-false-not-given',
+            instruction: 'Do the following statements agree with the information given in the passage? Choose TRUE, FALSE or NOT GIVEN.',
+            questionText: 'The number of virtual communities has declined in recent years.',
+            options: ['TRUE', 'FALSE', 'NOT GIVEN'],
+            correctAnswer: 'NOT GIVEN',
+            explanation: 'The passage mentions the "growth of virtual communities" but does not provide any information about whether this number has declined recently.'
+        },
+        {
+            id: '5',
+            passage: 1,
+            type: 'multiple-answer',
+            instruction: 'Choose TWO letters, A-E. Which TWO of the following are mentioned as drawbacks of hyper-connectivity?',
+            questionText: '',
+            options: ['Economic inequality', 'Loss of privacy', 'Decline in literacy', 'Spread of false information', 'Reduced battery life'],
+            correctAnswer: ['Loss of privacy', 'Spread of false information'],
+            requiredAnswers: 2,
+            explanation: 'The passage lists "Concerns about privacy" and "the spread of misinformation" as significant challenges.'
+        },
+
+        // Passage 2
+        {
+            id: '6-9',
+            passage: 2,
+            type: 'matching-headings',
+            instruction: 'The reading passage has four paragraphs, A-D. Choose the correct heading for each paragraph from the list of headings below.',
+            matchingOptions: [
+                'i. The benefits of integrating different city functions',
+                'ii. The need for resident participation',
+                'iii. The definition and purpose of urban planning',
+                'iv. The importance of historical context',
+                'v. A focus on environmental sustainability',
+            ],
+            subQuestions: [
+                { id: '6', text: 'Paragraph A' },
+                { id: '7', text: 'Paragraph B' },
+                { id: '8', text: 'Paragraph C' },
+                { id: '9', text: 'Paragraph D' },
+            ],
+            correctAnswer: {
+                '6': 'iii. The definition and purpose of urban planning',
+                '7': 'v. A focus on environmental sustainability',
+                '8': 'i. The benefits of integrating different city functions',
+                '9': 'ii. The need for resident participation'
+            },
+            explanation: 'Each heading correctly summarizes the main idea of the corresponding paragraph.'
+        },
+        {
+            id: '10',
+            passage: 2,
+            type: 'fill-in-the-blank',
+            instruction: 'Complete the sentence below. Use NO MORE THAN TWO WORDS from the passage for each answer.',
+            questionText: 'A key challenge for modern planners is ___ .',
+            correctAnswer: 'sustainability',
+            explanation: 'The passage states, "One of the key challenges in modern urban planning is sustainability."'
+        },
+        {
+            id: '11',
+            passage: 2,
+            type: 'yes-no-not-given',
+            instruction: 'Do the following statements agree with the views of the writer in the passage? Choose YES, NO or NOT GIVEN.',
+            questionText: 'Mixed-use development is the only effective strategy for green cities.',
+            options: ['YES', 'NO', 'NOT GIVEN'],
+            correctAnswer: 'NO',
+            explanation: 'The passage calls mixed-use development "another popular strategy," implying it is one of several, not the only one.'
+        },
+        {
+            id: '12',
+            passage: 2,
+            type: 'yes-no-not-given',
+            instruction: 'Do the following statements agree with the views of the writer in the passage? Choose YES, NO or NOT GIVEN.',
+            questionText: 'Community involvement is important for development projects.',
+            options: ['YES', 'NO', 'NOT GIVEN'],
+            correctAnswer: 'YES',
+            explanation: 'The passage states that community involvement is "crucial to ensure that development projects reflect the values and needs of the residents."'
+        },
+        // Placeholder to reach 40 questions
+        ...Array.from({ length: 28 }, (_, i) => ({
+             id: `${13 + i}`,
+            passage: 3,
+            type: 'multiple-choice',
+            instruction: 'Choose the correct letter, A, B, C or D.',
+            questionText: `Placeholder question ${13 + i} for Passage 3.`,
+            options: [ 'Option A', 'Option B', 'Option C', 'Option D'],
+            correctAnswer: 'Option A',
+            explanation: 'This is a placeholder explanation.'
+        }))
+    ]
   },
 ];
 
@@ -270,3 +362,5 @@ export const getNextLesson = () => {
     }
     return null;
 }
+
+    
