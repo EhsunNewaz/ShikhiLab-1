@@ -10,6 +10,14 @@ import { HelpDialog } from './help-dialog';
 import { ExamSettings } from './exam-settings';
 import { Button } from '../ui/button';
 import { NotesPanel } from './notes-panel';
+import { BottomPanel } from './bottom-panel';
+
+interface QuestionState {
+    id: string;
+    passage: number;
+    status: 'unanswered' | 'answered';
+    isReviewed: boolean;
+  }
 
 interface ExamShellProps {
   children: ReactNode;
@@ -19,6 +27,12 @@ interface ExamShellProps {
   onToggleReview: () => void;
   onToggleNotes: () => void;
   isNotesOpen: boolean;
+  // For BottomPanel
+  questions: QuestionState[];
+  currentQuestionIndex: number;
+  onSelectQuestion: (index: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -28,8 +42,14 @@ export function ExamShell({
   onTimeUp,
   onSubmit,
   isSubmitted,
+  onToggleReview,
   onToggleNotes,
   isNotesOpen,
+  questions,
+  currentQuestionIndex,
+  onSelectQuestion,
+  onPrev,
+  onNext,
 }: ExamShellProps) {
   const [isScreenHidden, setIsScreenHidden] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
@@ -127,6 +147,16 @@ export function ExamShell({
               <Button onClick={() => setIsScreenHidden(false)}>Resume Test</Button>
           </div>
       )}
+
+      <BottomPanel
+        questions={questions}
+        currentQuestionIndex={currentQuestionIndex}
+        onSelectQuestion={onSelectQuestion}
+        isSubmitted={isSubmitted}
+        onNext={onNext}
+        onPrev={onPrev}
+        onReview={onToggleReview}
+      />
 
 
       {/* Popups and Overlays */}

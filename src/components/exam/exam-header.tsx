@@ -5,7 +5,7 @@ import { ExamTimer } from './exam-timer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth-hook';
 import { Settings, HelpCircle, EyeOff, Wifi, Bell, Menu, FileText } from 'lucide-react';
-import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 interface ExamHeaderProps {
