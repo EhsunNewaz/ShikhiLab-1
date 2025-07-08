@@ -207,7 +207,6 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className, anno
     hideAllPopups();
     
     if (!rootRef.current) return;
-    const rootRect = rootRef.current.getBoundingClientRect();
     const target = e.target as HTMLElement;
     const annotationElement = target.closest('[data-annotation-id]');
     const annotationId = annotationElement?.getAttribute('data-annotation-id');
@@ -216,8 +215,8 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className, anno
         const rect = annotationElement.getBoundingClientRect();
         setContextMenu({
             visible: true,
-            x: rect.left - rootRect.left,
-            y: rect.bottom - rootRect.top + 5,
+            x: e.clientX - rect.left + (rect.left - rootRef.current.getBoundingClientRect().left),
+            y: e.clientY - rect.top + (rect.bottom - rootRef.current.getBoundingClientRect().top) + 5,
             type: 'annotation',
             annotationId: annotationId,
         });
@@ -241,9 +240,9 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className, anno
 
     setContextMenu({
         visible: true,
-        x: e.clientX - rootRect.left,
-        y: e.clientY - rootRect.top,
-    type: 'selection',
+        x: rect.left - rootRef.current.getBoundingClientRect().left,
+        y: rect.bottom - rootRef.current.getBoundingClientRect().top + 5,
+        type: 'selection',
         selection: offsets,
     });
   }
@@ -322,8 +321,7 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className, anno
                 <Tooltip>
                     <TooltipTrigger asChild> 
                          <div 
-                           className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full border border-white" 
-                           onClick={(e) => e.stopPropagation()}
+                           className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full border border-white"
                           />
                     </TooltipTrigger>
                     <TooltipContent 
