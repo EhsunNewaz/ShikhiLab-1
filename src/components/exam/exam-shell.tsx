@@ -11,6 +11,7 @@ import { ExamSettings } from './exam-settings';
 import { Button } from '../ui/button';
 import { NotesPanel } from './notes-panel';
 import { BottomPanel } from './bottom-panel';
+import type { Annotation } from './interactive-passage';
 
 interface QuestionState {
     id: string;
@@ -30,6 +31,11 @@ interface ExamShellProps {
   onPrev: () => void;
   onNext: () => void;
   onToggleReview: () => void;
+  // Props for Notes Panel
+  isNotesOpen: boolean;
+  onToggleNotes: () => void;
+  annotations: Annotation[];
+  onNoteSelect: (annotationId: string) => void;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -44,13 +50,16 @@ export function ExamShell({
   onSelectQuestion,
   onPrev,
   onNext,
-  onToggleReview
+  onToggleReview,
+  isNotesOpen,
+  onToggleNotes,
+  annotations,
+  onNoteSelect,
 }: ExamShellProps) {
   const [isScreenHidden, setIsScreenHidden] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -106,7 +115,8 @@ export function ExamShell({
         onToggleHelp={() => setIsHelpOpen(true)}
         onToggleSettings={() => setIsSettingsOpen(true)}
         onToggleHide={() => setIsScreenHidden(true)}
-        onToggleNotes={() => setIsNotesOpen(prev => !prev)}
+        onToggleNotes={onToggleNotes}
+        isSubmitted={isSubmitted}
       />
 
       {/* Main Content Area - with padding for header and footer */}
@@ -114,7 +124,12 @@ export function ExamShell({
         {children}
       </main>
       
-      <NotesPanel isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} />
+      <NotesPanel 
+        isOpen={isNotesOpen} 
+        onClose={onToggleNotes} 
+        annotations={annotations}
+        onNoteSelect={onNoteSelect}
+      />
 
       {isScreenHidden && (
           <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-4">

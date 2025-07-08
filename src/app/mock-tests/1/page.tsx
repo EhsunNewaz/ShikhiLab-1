@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth-hook';
 import { useToast } from '@/hooks/use-toast';
 import { ExamShell } from '@/components/exam/exam-shell';
 import { SplitScreenLayout } from '@/components/exam/split-screen-layout';
-import { InteractivePassage } from '@/components/exam/interactive-passage';
+import { InteractivePassage, type Annotation } from '@/components/exam/interactive-passage';
 import { readingTestData, type ReadingQuestion as ReadingQuestionData } from '@/lib/course-data';
 import { ExamInput } from '@/components/exam/form-elements/exam-input';
 import { ExamRadioGroup, ExamRadioGroupItem } from '@/components/exam/form-elements/exam-radio-group';
@@ -61,11 +61,19 @@ function QuestionRenderer({
   answer,
   onAnswerChange,
   isSubmitted,
+  annotations,
+  setAnnotations,
+  scrollToAnnotationId,
+  onScrollComplete
 }: {
   question: ReadingQuestionData;
   answer: any;
   onAnswerChange: (questionId: string, value: any) => void;
   isSubmitted: boolean;
+  annotations: Annotation[];
+  setAnnotations: (annotations: Annotation[]) => void;
+  scrollToAnnotationId: string | null;
+  onScrollComplete: () => void;
 }) {
   let isCorrect = false;
   if (isSubmitted) {
@@ -77,6 +85,13 @@ function QuestionRenderer({
       isCorrect = JSON.stringify(answer) === JSON.stringify(question.correctAnswer);
     }
   }
+  
+  const passageProps = {
+    annotations,
+    setAnnotations,
+    scrollToAnnotationId,
+    onScrollComplete,
+  };
 
   const renderFeedback = () => {
     if (!isSubmitted) return null;
@@ -102,7 +117,7 @@ function QuestionRenderer({
         <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
             <Label htmlFor={question.id}>
-              <InteractivePassage id={`q-${question.id}-pre`} text={question.questionText.split('___')[0]} as="span" />
+              <InteractivePassage id={`q-${question.id}-pre`} text={question.questionText.split('___')[0]} as="span" {...passageProps} />
             </Label>
             <ExamInput
               id={question.id}
@@ -112,7 +127,7 @@ function QuestionRenderer({
               className={cn(isSubmitted && (isCorrect ? 'border-green-500' : 'border-destructive'))}
             />
             <Label htmlFor={question.id}>
-              <InteractivePassage id={`q-${question.id}-post`} text={question.questionText.split('___')[1]} as="span" />
+              <InteractivePassage id={`q-${question.id}-post`} text={question.questionText.split('___')[1]} as="span" {...passageProps} />
             </Label>
           </div>
           {renderFeedback()}
@@ -122,7 +137,7 @@ function QuestionRenderer({
       return (
          <div className="space-y-4">
             <div className="font-semibold">
-              <InteractivePassage id={`q-${question.id}`} text={question.questionText} />
+              <InteractivePassage id={`q-${question.id}`} text={question.questionText} {...passageProps} />
             </div>
             <ExamRadioGroup
               value={answer}
@@ -140,7 +155,7 @@ function QuestionRenderer({
                         isSubmitted && !isCorrectOption && isSelected && "bg-red-100 border-red-500",
                         !isSubmitted && "bg-background"
                     )}>
-                        <ExamRadioGroupItem value={opt} id={`${question.id}-${opt}`} label={opt} disabled={isSubmitted}/>
+                        <ExamRadioGroupItem value={opt} id={`${question.id}-${opt}`} label={opt} disabled={isSubmitted} passageProps={passageProps}/>
                     </div>
                 )
               })}
@@ -161,7 +176,7 @@ function QuestionRenderer({
       return (
          <div className="space-y-4">
             <div className="font-semibold">
-              <InteractivePassage id={`q-${question.id}`} text={question.questionText} />
+              <InteractivePassage id={`q-${question.id}`} text={question.questionText} {...passageProps} />
             </div>
             <div className="flex flex-col gap-2">
               {question.options.map(opt => {
@@ -180,6 +195,7 @@ function QuestionRenderer({
                             onCheckedChange={() => handleCheckboxChange(opt)}
                             label={opt}
                             disabled={isSubmitted}
+                            passageProps={passageProps}
                         />
                     </div>
                 )
@@ -199,11 +215,16 @@ function QuestionPanel({
   answers,
   onAnswerChange,
   isSubmitted,
+  ...passageProps
 }: {
   questionGroup: ReadingQuestionData[];
   answers: Record<string, any>;
   onAnswerChange: (questionId: string, value: any) => void;
   isSubmitted: boolean;
+  annotations: Annotation[];
+  setAnnotations: (annotations: Annotation[]) => void;
+  scrollToAnnotationId: string | null;
+  onScrollComplete: () => void;
 }) {
   if (!questionGroup || questionGroup.length === 0) {
     return null;
@@ -220,7 +241,7 @@ function QuestionPanel({
       <CardHeader>
         <CardTitle>{questionRange}</CardTitle>
         <CardDescription>
-          <InteractivePassage id={`instruction-${firstQuestion.id}`} text={firstQuestion.instruction} />
+          <InteractivePassage id={`instruction-${firstQuestion.id}`} text={firstQuestion.instruction} {...passageProps} />
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -231,6 +252,7 @@ function QuestionPanel({
               answer={answers[question.id]}
               onAnswerChange={onAnswerChange}
               isSubmitted={isSubmitted}
+              {...passageProps}
             />
             {index < questionGroup.length - 1 && <Separator className="mt-6" />}
           </div>
@@ -248,22 +270,51 @@ export default function MockTestPage() {
   
   const { user } = useAuth();
   const { toast } = useToast();
-  const storageKey = `answers_${readingTest.id}`;
+  const answerStorageKey = `answers_${readingTest.id}`;
+  const annotationStorageKey = `annotations_${readingTest.id}`;
 
-  // Initialize with an empty object on both server and client
+  // State for the exam answers
   const [answers, setAnswers] = useState<Record<string, any>>({});
+  
+  // State for annotations (highlights and notes)
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [scrollToAnnotationId, setScrollToAnnotationId] = useState<string | null>(null);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
 
-  // On the client, after the initial render, load answers from localStorage
+
+  // On the client, after the initial render, load answers and annotations from localStorage
   useEffect(() => {
     try {
-      const savedAnswers = window.localStorage.getItem(storageKey);
-      if (savedAnswers) {
-        setAnswers(JSON.parse(savedAnswers));
-      }
+      const savedAnswers = window.localStorage.getItem(answerStorageKey);
+      if (savedAnswers) setAnswers(JSON.parse(savedAnswers));
+      
+      const savedAnnotations = window.localStorage.getItem(annotationStorageKey);
+      if (savedAnnotations) setAnnotations(JSON.parse(savedAnnotations));
+
     } catch (error) {
       console.error("Error reading from localStorage", error);
     }
-  }, [storageKey]);
+  }, [answerStorageKey, annotationStorageKey]);
+  
+  // Effect to save answers to localStorage whenever they change
+  useEffect(() => {
+    if (!isSubmitted) {
+        try {
+            window.localStorage.setItem(answerStorageKey, JSON.stringify(answers));
+        } catch (error) {
+            console.error("Error writing to localStorage", error);
+        }
+    }
+  }, [answers, answerStorageKey, isSubmitted]);
+
+  // Effect to save annotations to localStorage whenever they change
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(annotationStorageKey, JSON.stringify(annotations));
+    } catch (error) {
+      console.error("Failed to save annotations to localStorage", error);
+    }
+  }, [annotations, annotationStorageKey]);
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -275,31 +326,21 @@ export default function MockTestPage() {
     }))
   }, [answers, reviewedQuestions]);
 
-
-  // Effect to save answers to localStorage whenever they change
-  useEffect(() => {
-    if (!isSubmitted) {
-        try {
-            window.localStorage.setItem(storageKey, JSON.stringify(answers));
-        } catch (error) {
-            console.error("Error writing to localStorage", error);
-        }
-    }
-  }, [answers, storageKey, isSubmitted]);
-
-
   const handleAnswerChange = (questionId: string, value: any) => {
     if (isSubmitted) return;
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const handleTimeUp = () => {
-    console.log('Time is up! Submitting test.');
-    handleSubmit();
-  };
+  const handleTimeUp = useCallback(() => {
+    if (!isSubmitted) {
+        console.log('Time is up! Submitting test.');
+        handleSubmit();
+    }
+  }, [isSubmitted]);
   
   const handleSubmit = async () => {
     setShowSubmitDialog(false);
+    if (isSubmitted) return;
     
     let calculatedScore = 0;
     for (const q of initialQuestions) {
@@ -316,7 +357,8 @@ export default function MockTestPage() {
     }
     setScore(calculatedScore);
     setIsSubmitted(true);
-    window.localStorage.removeItem(storageKey);
+    window.localStorage.removeItem(answerStorageKey);
+    window.localStorage.removeItem(annotationStorageKey);
 
     // If user is logged in, save the result to Firestore
     if (user && db?.app) {
@@ -372,6 +414,15 @@ export default function MockTestPage() {
   }
 
   const currentPassageIndex = initialQuestions[currentQuestionIndex]?.passage - 1;
+  const onScrollComplete = useCallback(() => setScrollToAnnotationId(null), []);
+
+  const passageProps = {
+    annotations,
+    setAnnotations,
+    scrollToAnnotationId,
+    onScrollComplete
+  };
+
 
   if (currentPassageIndex === undefined) {
     return <div>Loading test...</div>
@@ -412,6 +463,11 @@ export default function MockTestPage() {
             onPrev={handlePrev}
             onNext={handleNext}
             onToggleReview={handleToggleReview}
+            // Props for the Notes Panel
+            isNotesOpen={isNotesOpen}
+            onToggleNotes={() => setIsNotesOpen(prev => !prev)}
+            annotations={annotations}
+            onNoteSelect={setScrollToAnnotationId}
         >
             <SplitScreenLayout
             leftPanel={
@@ -419,9 +475,10 @@ export default function MockTestPage() {
                     <h1 className="text-2xl font-bold text-gray-800">Reading Passage {currentPassageIndex + 1}</h1>
                     <p className="text-sm text-gray-600">You should spend about 20 minutes on Questions {readingTest.questions.find(q => q.passage === currentPassageIndex + 1)?.id}-{readingTest.questions.filter(q => q.passage === currentPassageIndex + 1).at(-1)?.id}, which are based on the passage below.</p>
                     <InteractivePassage
-                      id={`annotations-${readingTest.id}-passage-${currentPassageIndex}`}
+                      id={`passage-${readingTest.id}-${currentPassageIndex}`}
                       text={readingTest.passages[currentPassageIndex]}
                       className="max-w-none font-body text-base leading-relaxed"
+                      {...passageProps}
                     />
                 </div>
             }
@@ -435,6 +492,7 @@ export default function MockTestPage() {
                             answers={answers}
                             onAnswerChange={handleAnswerChange}
                             isSubmitted={isSubmitted}
+                            {...passageProps}
                         />
                     </div>
                 </ScrollArea>

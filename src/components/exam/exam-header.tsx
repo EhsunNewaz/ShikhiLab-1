@@ -15,9 +15,10 @@ interface ExamHeaderProps {
     onToggleHelp: () => void;
     onToggleHide: () => void;
     onToggleNotes: () => void;
+    isSubmitted: boolean;
 }
 
-export function ExamHeader({ onTimeUp, onSubmit, onToggleHelp, onToggleSettings, onToggleHide, onToggleNotes }: ExamHeaderProps) {
+export function ExamHeader({ onTimeUp, onSubmit, onToggleHelp, onToggleSettings, onToggleHide, onToggleNotes, isSubmitted }: ExamHeaderProps) {
     const { user, loading } = useAuth();
     const candidateNumber = user?.uid.substring(0, 8).toUpperCase() || 'N/A';
 
@@ -35,12 +36,12 @@ export function ExamHeader({ onTimeUp, onSubmit, onToggleHelp, onToggleSettings,
                </div>
            </div>
            <div className="h-8 w-px bg-gray-300"></div>
-           <ExamTimer initialMinutes={60} onTimeUp={onTimeUp} />
+           <ExamTimer initialMinutes={60} onTimeUp={onTimeUp} isPaused={isSubmitted} />
         </div>
         
         {/* Right Side: Controls */}
         <div className="flex items-center justify-end gap-1 text-sm">
-            <Button onClick={onSubmit} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            <Button onClick={onSubmit} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" disabled={isSubmitted}>
                 Finish test
             </Button>
              

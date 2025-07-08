@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect, type MouseEvent, type ReactNode } from 'react';
@@ -10,12 +11,13 @@ import { X, Pencil } from 'lucide-react';
 
 
 // --- TYPES ---
-interface Annotation {
+export interface Annotation {
   id: string;
   start: number;
   end: number;
   type: 'highlight' | 'note';
   noteText?: string;
+  passageId: string;
 }
 
 interface ContextMenuState {
@@ -33,12 +35,17 @@ interface NotesPanelState {
     noteText: string;
 }
 
-interface InteractivePassageProps {
-  id: string;
+export interface PassageProps {
+  id: string; // A unique ID for this passage instance for storage
   text: string;
   as?: React.ElementType;
   className?: string;
+  annotations: Annotation[];
+  setAnnotations: (annotations: Annotation[]) => void;
+  scrollToAnnotationId: string | null;
+  onScrollComplete: () => void;
 }
+
 
 // --- SUB-COMPONENTS ---
 const ContextMenuPopup = ({ state, annotations, onHighlight, onNote, onClear, onClearAll, onViewNote }: { state: ContextMenuState; annotations: Annotation[]; onHighlight: () => void; onNote: () => void; onClear: (id: string) => void; onClearAll: () => void; onViewNote: (id: string) => void; }) => {
@@ -136,41 +143,29 @@ const StickyNotePanel = ({ noteText, onClose, onSave }: { noteText: string; onCl
 
 
 // --- MAIN COMPONENT ---
-export function InteractivePassage({ id, text, as: Comp = 'div', className }: InteractivePassageProps) {
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+export function InteractivePassage({ id, text, as: Comp = 'div', className, annotations, setAnnotations, scrollToAnnotationId, onScrollComplete }: PassageProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ x: 0, y: 0, visible: false, type: 'selection' });
   const [notesPanel, setNotesPanel] = useState<NotesPanelState>({ visible: false, annotationId: '', noteText: ''});
   const rootRef = useRef<HTMLDivElement>(null); // Ref for the main container
-  const passageRef = useRef<HTMLDivElement>(null); // Ref for the text container
   const { toast } = useToast();
   
-  const storageKey = `passage-annotations-${id}`;
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedAnnotations = window.localStorage.getItem(storageKey);
-      if (savedAnnotations) {
-        setAnnotations(JSON.parse(savedAnnotations));
-      }
-    } catch (error) {
-      console.error("Failed to load annotations from localStorage", error);
-    }
-  }, [storageKey]);
-
-  // Save to localStorage on change
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKey, JSON.stringify(annotations));
-    } catch (error) {
-      console.error("Failed to save annotations to localStorage", error);
-    }
-  }, [annotations, storageKey]);
-
+  // Filter annotations for this specific passage instance
+  const passageAnnotations = useMemo(() => annotations.filter(a => a.passageId === id), [annotations, id]);
 
   const hideAllPopups = () => {
     setContextMenu(prev => ({ ...prev, visible: false }));
   };
+  
+  // Effect to scroll to a specific annotation when requested by parent
+  useEffect(() => {
+    if (scrollToAnnotationId && rootRef.current) {
+        const element = rootRef.current.querySelector(`[data-annotation-id="${scrollToAnnotationId}"]`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        onScrollComplete(); // Notify parent that scroll is done
+    }
+  }, [scrollToAnnotationId, onScrollComplete]);
 
   useEffect(() => {
     const handleClickOutside = (event: globalThis.MouseEvent) => {
@@ -188,8 +183,8 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
     
     const range = selection.getRangeAt(0);
-    // Ensure the selection is within our passageRef container
-    if (!passageRef.current || !passageRef.current.contains(range.startContainer) || !passageRef.current.contains(range.endContainer)) {
+    
+    if (!rootRef.current || !rootRef.current.contains(range.startContainer) || !rootRef.current.contains(range.endContainer)) {
         return null;
     }
 
@@ -210,11 +205,8 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     e.preventDefault();
     hideAllPopups();
     
-    const rootContainer = rootRef.current;
-    if (!rootContainer) return;
-
-    const rootRect = rootContainer.getBoundingClientRect();
-
+    if (!rootRef.current) return;
+    const rootRect = rootRef.current.getBoundingClientRect();
     const target = e.target as HTMLElement;
     const annotationElement = target.closest('[data-annotation-id]');
     const annotationId = annotationElement?.getAttribute('data-annotation-id');
@@ -231,10 +223,10 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
         return;
     }
 
-    const offsets = getSelectionOffsets(passageRef.current!);
+    const offsets = getSelectionOffsets(rootRef.current);
     if (!offsets) return;
 
-    const isOverlapping = annotations.some(h => (offsets.start < h.end && offsets.end > h.start));
+    const isOverlapping = passageAnnotations.some(h => (offsets.start < h.end && offsets.end > h.start));
     if (isOverlapping) {
       toast({ variant: 'destructive', title: "Overlapping Selection", description: "Highlights cannot overlap." });
       return;
@@ -254,23 +246,26 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
         selection: offsets,
     });
   }
-
+  
   const addAnnotation = (type: 'highlight' | 'note', noteText: string = '') => {
     const selection = contextMenu.selection;
     if (!selection) return;
 
-    const newAnnotation: Annotation = { ...selection, id: crypto.randomUUID(), type, noteText };
-    setAnnotations(prev => [...prev, newAnnotation].sort((a,b) => a.start - b.start));
+    const newAnnotation: Annotation = { ...selection, id: crypto.randomUUID(), type, noteText, passageId: id };
+    
+    const newAnnotations = [...annotations, newAnnotation].sort((a,b) => a.start - b.start);
+    setAnnotations(newAnnotations);
     
     if (type === 'note') {
         setNotesPanel({ visible: true, annotationId: newAnnotation.id, noteText });
     }
     
     hideAllPopups();
+    window.getSelection()?.removeAllRanges();
   };
   
   const handleUpdateNote = (annotationId: string, text: string) => {
-    setAnnotations(prev => prev.map(ann => 
+    setAnnotations(prevAnns => prevAnns.map(ann => 
         ann.id === annotationId ? { ...ann, noteText: text, type: 'note' } : ann
     ));
   };
@@ -279,13 +274,13 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     setNotesPanel({visible: false, annotationId: '', noteText: ''});
   }
 
-  const removeAnnotation = (id: string) => {
-    setAnnotations(annotations.filter(h => h.id !== id));
+  const removeAnnotation = (idToRemove: string) => {
+    setAnnotations(annotations.filter(h => h.id !== idToRemove));
     hideAllPopups();
   };
 
   const removeAllAnnotations = () => {
-    setAnnotations([]);
+    setAnnotations(annotations.filter(a => a.passageId !== id));
     hideAllPopups();
   }
   
@@ -297,19 +292,18 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     hideAllPopups();
   };
 
-
   const renderedPassage = useMemo(() => {
-    if (annotations.length === 0) return text;
+    if (passageAnnotations.length === 0) return text;
 
     const parts: ReactNode[] = [];
     let lastIndex = 0;
 
-    annotations.forEach(annotation => {
+    passageAnnotations.forEach(annotation => {
       if (annotation.start > lastIndex) {
         parts.push(text.substring(lastIndex, annotation.start));
       }
-
-      parts.push(
+      
+      const el = (
         <span
           key={annotation.id}
           className={cn('cursor-pointer relative bg-exam-highlight')}
@@ -321,6 +315,8 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
            )}
         </span>
       );
+
+      parts.push(el);
       lastIndex = annotation.end;
     });
 
@@ -328,12 +324,12 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
       parts.push(text.substring(lastIndex));
     }
     return parts;
-  }, [text, annotations]);
+  }, [text, passageAnnotations]);
 
 
   return (
     <div ref={rootRef} onContextMenu={handleContextMenu} className="relative" data-interactive-passage="true">
-      <Comp ref={passageRef} className={cn("whitespace-pre-wrap select-text", className)}>
+      <Comp className={cn("whitespace-pre-wrap select-text", className)}>
         {renderedPassage}
       </Comp>
       

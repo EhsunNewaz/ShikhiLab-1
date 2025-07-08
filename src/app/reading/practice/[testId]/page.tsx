@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { readingTestData, type ReadingQuestion } from '@/lib/course-data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { InteractivePassage } from '@/components/exam/interactive-passage';
+import { InteractivePassage, type Annotation } from '@/components/exam/interactive-passage';
 
 
 export default function ReadingPracticePage() {
@@ -24,6 +24,30 @@ export default function ReadingPracticePage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   
+  // Annotation state for this practice page
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const annotationStorageKey = `annotations_practice_${testId}`;
+
+  useEffect(() => {
+    try {
+      const savedAnnotations = window.localStorage.getItem(annotationStorageKey);
+      if (savedAnnotations) {
+        setAnnotations(JSON.parse(savedAnnotations));
+      }
+    } catch (error) {
+      console.error("Failed to load annotations from localStorage", error);
+    }
+  }, [annotationStorageKey]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(annotationStorageKey, JSON.stringify(annotations));
+    } catch (error) {
+      console.error("Failed to save annotations to localStorage", error);
+    }
+  }, [annotations, annotationStorageKey]);
+
+
   if (!testData) {
     notFound();
   }
@@ -41,7 +65,9 @@ export default function ReadingPracticePage() {
   };
   
   const score = testData.questions.reduce((acc, q) => {
-      return answers[q.id] === q.correctAnswer ? acc + 1 : acc;
+      // For practice mode, we'll simplify and only check the first correct answer for multi-answer questions
+      const correctAnswer = Array.isArray(q.correctAnswer) ? q.correctAnswer[0] : q.correctAnswer;
+      return answers[q.id] === correctAnswer ? acc + 1 : acc;
   }, 0);
 
   return (
@@ -71,9 +97,14 @@ export default function ReadingPracticePage() {
           <CardContent>
             <ScrollArea className="h-[calc(100vh-16rem)] pr-4">
               <InteractivePassage 
-                id={`annotations-${testData.id}-passage-0`}
+                id={`annotations-${testData.id}`}
                 text={testData.passages[0]} 
-                className="max-w-none font-body text-base leading-relaxed" 
+                className="max-w-none font-body text-base leading-relaxed"
+                annotations={annotations}
+                setAnnotations={setAnnotations}
+                // These props are for the full exam shell and not needed here
+                scrollToAnnotationId={null}
+                onScrollComplete={() => {}}
               />
             </ScrollArea>
           </CardContent>

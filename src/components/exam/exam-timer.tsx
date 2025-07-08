@@ -9,14 +9,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface TimerProps {
   initialMinutes?: number;
   onTimeUp: () => void;
+  isPaused?: boolean;
 }
 
-export function ExamTimer({ initialMinutes = 60, onTimeUp }: TimerProps) {
+export function ExamTimer({ initialMinutes = 60, onTimeUp, isPaused = false }: TimerProps) {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const mounted = useMounted();
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || isPaused) return;
 
     if (timeLeft <= 0) {
       onTimeUp();
@@ -28,7 +29,7 @@ export function ExamTimer({ initialMinutes = 60, onTimeUp }: TimerProps) {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [timeLeft, onTimeUp, mounted]);
+  }, [timeLeft, onTimeUp, mounted, isPaused]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
