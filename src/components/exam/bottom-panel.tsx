@@ -36,7 +36,7 @@ const getPartFromIndex = (index: number): number => {
 };
 
 const getQuestionsForPart = (questions: QuestionState[], part: number): QuestionState[] => {
-    if (!questions || questions.length === 0) return [];
+    if (!questions) return [];
     if (part === 1) return questions.slice(0, 13);
     if (part === 2) return questions.slice(13, 26);
     return questions.slice(26, 40);
@@ -48,7 +48,7 @@ const getStartIndexForPart = (part: number): number => {
     return 26;
 }
 
-const COMPACT_THRESHOLD_PX = 600;
+const COMPACT_THRESHOLD_PX = 450;
 
 export function BottomPanel({
   questions,
@@ -59,7 +59,6 @@ export function BottomPanel({
   onReview,
   isSubmitted,
 }: BottomPanelProps) {
-
   const [activePart, setActivePart] = useState(getPartFromIndex(currentQuestionIndex));
   const [isCompact, setIsCompact] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -137,7 +136,7 @@ export function BottomPanel({
             onClick={() => onSelectQuestion(getStartIndexForPart(partNumber))}
             disabled={isSubmitted}
         >
-            Part {partNumber}: {answeredCount} of {partQuestions.length} questions
+            Part {partNumber}: {answeredCount} of {partQuestions.length}
         </Button>
     )
   }
@@ -147,7 +146,7 @@ export function BottomPanel({
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-20 border-t bg-gray-100 font-exam p-2 flex items-center gap-4 shadow-top">
         {/* Question Palette Container (Flexible) */}
-        <div className="flex-1 min-w-0" ref={containerRef}>
+        <div className="flex-1 min-w-0 overflow-hidden" ref={containerRef}>
              <div className="flex items-center gap-3">
                 {isCompact ? (
                     <>
