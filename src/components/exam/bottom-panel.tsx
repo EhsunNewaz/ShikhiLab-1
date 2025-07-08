@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, Flag, ChevronDown } from 'lucide-react';
@@ -29,24 +29,11 @@ interface BottomPanelProps {
   isSubmitted: boolean;
 }
 
-const getPartFromIndex = (index: number): number => {
-  if (index < 13) return 1;
-  if (index < 26) return 2;
-  return 3;
-};
-
-const getQuestionsForPart = (questions: QuestionState[], part: number): QuestionState[] => {
-    if (!questions) return [];
-    if (part === 1) return questions.slice(0, 13);
-    if (part === 2) return questions.slice(13, 26);
-    return questions.slice(26, 40);
-};
-
-const getStartIndexForPart = (part: number): number => {
-    if (part === 1) return 0;
-    if (part === 2) return 13;
-    return 26;
-}
+const partConfig = [
+    { number: 1, size: 13 },
+    { number: 2, size: 13 },
+    { number: 3, size: 14 },
+];
 
 const COMPACT_THRESHOLD_PX = 450;
 
@@ -59,6 +46,38 @@ export function BottomPanel({
   onReview,
   isSubmitted,
 }: BottomPanelProps) {
+    
+  const partBoundaries = useMemo(() => {
+    const boundaries: { part: number, start: number, end: number }[] = [];
+    let cumulativeSize = 0;
+    partConfig.forEach(p => {
+        boundaries.push({
+            part: p.number,
+            start: cumulativeSize,
+            end: cumulativeSize + p.size,
+        });
+        cumulativeSize += p.size;
+    });
+    return boundaries;
+  }, []);
+
+  const getPartFromIndex = (index: number) => {
+    const boundary = partBoundaries.find(p => index >= p.start && index < p.end);
+    return boundary ? boundary.part : 1;
+  };
+
+  const getQuestionsForPart = (part: number) => {
+    if (!questions) return [];
+    const boundary = partBoundaries.find(p => p.part === part);
+    if (!boundary) return [];
+    return questions.slice(boundary.start, boundary.end);
+  };
+
+  const getStartIndexForPart = (part: number) => {
+    const boundary = partBoundaries.find(p => p.part === part);
+    return boundary ? boundary.start : 0;
+  }
+
   const [activePart, setActivePart] = useState(getPartFromIndex(currentQuestionIndex));
   const [isCompact, setIsCompact] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,13 +110,14 @@ export function BottomPanel({
   }
 
   const renderExpandedPart = (partNumber: number) => {
-    const partQuestions = getQuestionsForPart(questions, partNumber);
+    const partQuestions = getQuestionsForPart(partNumber);
+    const startIndex = getStartIndexForPart(partNumber);
     return (
         <div className="flex items-center gap-2 whitespace-nowrap p-2 rounded-md bg-white shadow-inner border border-gray-300">
             <h3 className="font-semibold text-gray-800 text-sm pl-2 pr-1">Part {partNumber}</h3>
             <div className="flex items-center gap-1.5">
-            {partQuestions.map((q) => {
-                const globalIndex = questions.findIndex(ques => ques.id === q.id);
+            {partQuestions.map((q, i) => {
+                const globalIndex = startIndex + i;
                 const isCurrent = globalIndex === currentQuestionIndex;
                 return (
                 <button
@@ -127,7 +147,7 @@ export function BottomPanel({
   }
 
   const renderCollapsedPart = (partNumber: number) => {
-    const partQuestions = getQuestionsForPart(questions, partNumber);
+    const partQuestions = getQuestionsForPart(partNumber);
     const answeredCount = partQuestions.filter(q => q.status === 'answered').length;
     return (
         <Button 
@@ -141,7 +161,7 @@ export function BottomPanel({
     )
   }
 
-  const otherParts = [1, 2, 3].filter(p => p !== activePart);
+  const otherParts = partConfig.map(p => p.number).filter(p => p !== activePart);
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-20 border-t bg-gray-100 font-exam p-2 flex items-center gap-4 shadow-top">
@@ -159,7 +179,7 @@ export function BottomPanel({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                             {otherParts.map(partNumber => {
-                                const partQuestions = getQuestionsForPart(questions, partNumber);
+                                const partQuestions = getQuestionsForPart(partNumber);
                                 const answeredCount = partQuestions.filter(q => q.status === 'answered').length;
                                 return (
                                 <DropdownMenuItem key={partNumber} onSelect={() => onSelectQuestion(getStartIndexForPart(partNumber))} disabled={isSubmitted}>
@@ -172,7 +192,7 @@ export function BottomPanel({
                     </>
                 ) : (
                     <>
-                        {[1, 2, 3].map(partNumber => (
+                        {partConfig.map(({ number: partNumber }) => (
                             <div key={partNumber}>
                                 {partNumber === activePart ? renderExpandedPart(partNumber) : renderCollapsedPart(partNumber)}
                             </div>
