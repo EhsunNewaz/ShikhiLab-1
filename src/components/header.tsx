@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { Menu, BookOpenText, MessageSquare, PenSquare, Mic, Headphones, LayoutDashboard, LogOut, ChevronDown, BrainCircuit, ClipboardCheck, BookOpen } from 'lucide-react';
+import { Menu, BookOpenText, MessageSquare, PenSquare, Mic, Headphones, LayoutDashboard, LogOut, ChevronDown, BrainCircuit, ClipboardCheck, BookOpen, Ear } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth-hook';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -31,6 +31,7 @@ const moduleNavLinks = [
 const secondaryNavLinks = [
     { href: '/mock-tests', label: 'Mock Tests' },
     { href: '/mentor', label: 'AI Mentor' },
+    { href: '/listening-lab', label: 'Listening Lab' },
 ];
 
 // Mobile nav combines all in-app links
@@ -44,6 +45,7 @@ const mobileNavLinks = [
   { href: '/reading', label: 'Reading', icon: BookOpen },
   { href: '/mock-tests', label: 'Mock Tests', icon: ClipboardCheck },
   { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
+  { href: '/listening-lab', label: 'Listening Lab', icon: Ear },
 ];
 
 // Public navigation for the landing page

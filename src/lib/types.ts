@@ -111,3 +111,18 @@ export interface UserProgress {
   completedAt: Timestamp;
   score?: number; // Optional, as lessons may not have a score
 }
+
+// Listening Lab Types
+export interface ListeningLabChunk {
+  id: string;
+  text: string; // The full text of the sentence/chunk
+  gaps: number[]; // Array of indices of words to be turned into gaps
+}
+
+export interface ListeningLabExercise {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  chunks: ListeningLabChunk[];
+}
