@@ -77,10 +77,13 @@ export type PhonicsDrill = {
     audio2Url: string;
 }
 
-export type ShadowingExercise = {
+export type FluencyExercise = {
+    id: string;
     title: string;
-    audioUrl: string;
-    transcript: string;
+    segments: {
+        id: string;
+        text: string;
+    }[];
 }
 
 export type ActiveListeningExercise = {
@@ -130,18 +133,30 @@ export const foundationSkills = {
         description: "Train your brain to think in English and speak more naturally.",
         icon: Repeat,
         href: "/foundation-skills/fluency",
-        shadowingExercises: [
+        fluencyExercises: [
             {
-                title: "Daily Habits",
-                audioUrl: "/audio/placeholder-shadowing-1.mp3",
-                transcript: "Every morning, I wake up at 7 AM. The first thing I do is drink a glass of water. Then, I spend about fifteen minutes stretching and doing some light exercise. It helps me wake up properly. After that, I take a shower and get dressed for the day. Breakfast is usually simple – just some toast and a cup of tea. I like to read the news on my phone while I eat. Before leaving the house, I always make sure I have my keys, wallet, and phone. My commute to work takes about thirty minutes by bus. During the ride, I often listen to a podcast or some music. It’s a nice way to relax before starting a busy day at the office."
+                id: 'fluency-1',
+                title: 'Daily Habits',
+                segments: [
+                    { id: 'fs-1-1', text: "Every morning, I wake up at 7 AM." },
+                    { id: 'fs-1-2', text: "The first thing I do is drink a glass of water." },
+                    { id: 'fs-1-3', text: "Then, I spend about fifteen minutes stretching and doing some light exercise." },
+                    { id: 'fs-1-4', text: "It helps me wake up properly." },
+                    { id: 'fs-1-5', text: "After that, I take a shower and get dressed for the day." },
+                ],
             },
             {
-                title: "Ordering Food at a Restaurant",
-                audioUrl: "/audio/placeholder-shadowing-2.mp3",
-                transcript: "Waiter: Hello, welcome! Here are your menus. Can I get you something to drink to start with?\nYou: Yes, I'll have a glass of lemonade, please.\nWaiter: Certainly. Are you ready to order your meal, or do you need a few more minutes?\nYou: I think I'm ready. I'd like to have the grilled chicken salad, please.\nWaiter: Excellent choice. And for you, sir?\nYour Friend: I'll have the vegetable pasta.\nWaiter: Great. So that's one lemonade, one grilled chicken salad, and one vegetable pasta. I'll be right back with your drinks."
+                id: 'fluency-2',
+                title: 'Ordering Food',
+                segments: [
+                    { id: 'fs-2-1', text: "Hello, welcome! Here are your menus." },
+                    { id: 'fs-2-2', text: "Can I get you something to drink to start with?" },
+                    { id: 'fs-2-3', text: "Yes, I'll have a glass of lemonade, please." },
+                    { id: 'fs-2-4', text: "Are you ready to order your meal, or do you need a few more minutes?" },
+                    { id: 'fs-2-5', text: "I think I'm ready. I'd like to have the grilled chicken salad, please." },
+                ]
             }
-        ] as ShadowingExercise[]
+        ] as FluencyExercise[]
     }
 }
 
@@ -181,7 +196,7 @@ Beyond the waggle dance, bees also rely on a combination of other cues. They hav
                 '2': 'NOT GIVEN',
                 '3': 'NOT GIVEN',
             },
-            explanation: "1: The passage says Pierre was a co-winner of her *first* Nobel Prize, not both. 2 & 3: The passage does not mention her childhood interest or her sister's contribution."
+            explanation: "1: The passage says Pierre was a co-winner of her *first* Nobel Prize, not both. 2 &amp; 3: The passage does not mention her childhood interest or her sister's contribution."
         },
         {
             id: '4',
