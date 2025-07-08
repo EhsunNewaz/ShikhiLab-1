@@ -99,7 +99,9 @@ function QuestionRenderer({
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <Label htmlFor={question.id}>{question.questionText.split('___')[0]}</Label>
+            <Label htmlFor={question.id}>
+              <InteractivePassage text={question.questionText.split('___')[0]} as="span" />
+            </Label>
             <ExamInput
               id={question.id}
               value={answer || ''}
@@ -107,7 +109,9 @@ function QuestionRenderer({
               disabled={isSubmitted}
               className={cn(isSubmitted && (isCorrect ? 'border-green-500' : 'border-destructive'))}
             />
-            <Label htmlFor={question.id}>{question.questionText.split('___')[1]}</Label>
+            <Label htmlFor={question.id}>
+              <InteractivePassage text={question.questionText.split('___')[1]} as="span" />
+            </Label>
           </div>
           {renderFeedback()}
         </div>
@@ -115,7 +119,9 @@ function QuestionRenderer({
     case 'multiple-choice':
       return (
          <div className="space-y-4">
-            <p className="font-semibold">{question.questionText}</p>
+            <div className="font-semibold">
+              <InteractivePassage text={question.questionText} />
+            </div>
             <ExamRadioGroup
               value={answer}
               onValueChange={(value) => onAnswerChange(question.id, value)}
@@ -152,7 +158,9 @@ function QuestionRenderer({
       };
       return (
          <div className="space-y-4">
-            <p className="font-semibold">{question.questionText}</p>
+            <div className="font-semibold">
+              <InteractivePassage text={question.questionText} />
+            </div>
             <div className="flex flex-col gap-2">
               {question.options.map(opt => {
                 const isSelected = (answer || []).includes(opt);
@@ -203,7 +211,7 @@ function QuestionPanel({
     <Card className="font-exam">
         <CardHeader>
             <CardTitle>Question {currentQuestion.id}</CardTitle>
-            <CardDescription>{currentQuestion.instruction}</CardDescription>
+            <CardDescription><InteractivePassage text={currentQuestion.instruction} /></CardDescription>
         </CardHeader>
         <CardContent>
             <QuestionRenderer
@@ -373,7 +381,7 @@ export default function MockTestPage() {
                 <div className="space-y-4">
                     <h1 className="text-2xl font-bold text-gray-800">Reading Passage {currentPassageIndex + 1}</h1>
                     <p className="text-sm text-gray-600">You should spend about 20 minutes on Questions {readingTest.questions.find(q => q.passage === currentPassageIndex + 1)?.id}-{readingTest.questions.filter(q => q.passage === currentPassageIndex + 1).at(-1)?.id}, which are based on the passage below.</p>
-                    <InteractivePassage text={readingTest.passages[currentPassageIndex]} />
+                    <InteractivePassage text={readingTest.passages[currentPassageIndex]} className="max-w-none font-body text-base leading-relaxed" />
                 </div>
             }
             rightPanel={

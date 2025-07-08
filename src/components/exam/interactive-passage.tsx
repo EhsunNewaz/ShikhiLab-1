@@ -23,6 +23,8 @@ interface PopupState {
 
 interface InteractivePassageProps {
   text: string;
+  as?: React.ElementType;
+  className?: string;
 }
 
 const SelectionPopup = ({
@@ -53,7 +55,7 @@ const SelectionPopup = ({
   );
 };
 
-export function InteractivePassage({ text }: InteractivePassageProps) {
+export function InteractivePassage({ text, as: Comp = 'div', className }: InteractivePassageProps) {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [tempHighlight, setTempHighlight] = useState<TempHighlight | null>(null);
   const [popup, setPopup] = useState<PopupState>({ x: 0, y: 0, visible: false });
@@ -115,8 +117,9 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
   };
   
   const handleMouseUp = () => {
+    if (!passageRef.current) return;
     const selection = window.getSelection();
-    if (!passageRef.current || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
         return;
     }
 
@@ -197,13 +200,13 @@ export function InteractivePassage({ text }: InteractivePassageProps) {
 
   return (
     <div className="relative">
-      <div
+      <Comp
         ref={passageRef}
-        className="max-w-none whitespace-pre-wrap font-body text-base leading-relaxed"
+        className={cn("whitespace-pre-wrap", className)}
         onMouseUp={handleMouseUp}
       >
         {renderedPassage}
-      </div>
+      </Comp>
       {popup.visible && tempHighlight && (
         <SelectionPopup
             x={popup.x}

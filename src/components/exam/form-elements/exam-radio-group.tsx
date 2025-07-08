@@ -5,6 +5,7 @@ import * as React from "react"
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
 
 import { cn } from "@/lib/utils"
+import { InteractivePassage } from "../interactive-passage"
 
 const ExamRadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,
@@ -43,7 +44,7 @@ const ExamRadioGroupItem = React.forwardRef<
                 {/* The background color change serves as the indicator */}
             </RadioGroupPrimitive.Indicator>
         </RadioGroupPrimitive.Item>
-        <span>{label}</span>
+        <InteractivePassage text={label} as="span" />
     </label>
   )
 })

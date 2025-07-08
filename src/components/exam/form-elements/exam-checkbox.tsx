@@ -5,6 +5,7 @@ import * as React from "react"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 
 import { cn } from "@/lib/utils"
+import { InteractivePassage } from "../interactive-passage"
 
 const ExamCheckbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
@@ -30,7 +31,7 @@ const ExamCheckbox = React.forwardRef<
         ✓
         </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
-    {label}
+    <InteractivePassage text={label} as="span" />
   </label>
 ))
 ExamCheckbox.displayName = CheckboxPrimitive.Root.displayName
