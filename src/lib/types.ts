@@ -126,3 +126,65 @@ export interface ListeningLabExercise {
   difficulty: 'easy' | 'medium' | 'hard';
   chunks: ListeningLabChunk[];
 }
+
+
+// Speaking Practice Types
+export interface ShadowingSegment {
+  id: string;
+  text: string;
+}
+
+export interface QAPair {
+  id: string;
+  question: string;
+  transcript: string;
+  segments: ShadowingSegment[];
+}
+
+export interface Part1Topic {
+  id: string;
+  title: string;
+  questions: QAPair[];
+}
+
+export interface Part1Exercise {
+  id: string;
+  title: string;
+  description: string;
+  topics: Part1Topic[];
+}
+
+export interface ShadowingExercise {
+  id: string;
+  title: string;
+  description: string;
+  cueCard: string[];
+  transcript: string;
+  segments: ShadowingSegment[];
+}
+
+export interface Part3Exercise {
+  id: string;
+  part2TopicId: string;
+  title: string;
+  description: string;
+  qaPairs: QAPair[];
+}
+
+export interface SpeakingFeedback {
+  pronunciationScore: number;
+  fluencyScore: number;
+  feedback: string;
+}
+
+export interface ComprehensiveSpeakingFeedback {
+  pronunciationScore: number;
+  pronunciationFeedback: string;
+  fluencyScore: number;
+  fluencyFeedback: string;
+  lexicalResourceScore: number;
+  lexicalResourceFeedback: string;
+  grammaticalRangeAndAccuracyScore: number;
+  grammaticalRangeAndAccuracyFeedback: string;
+  overallBandScore: number;
+}

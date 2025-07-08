@@ -7,3 +7,5 @@ import '@/ai/flows/get-listening-feedback.ts';
 import '@/ai/flows/text-to-speech.ts';
 import '@/ai/flows/get-thinking-prompt.ts';
 import '@/ai/flows/get-thinking-feedback.ts';
+import '@/ai/flows/get-speaking-feedback.ts';
+import '@/ai/flows/get-comprehensive-speaking-feedback.ts';

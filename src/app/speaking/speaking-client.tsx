@@ -1,197 +1,158 @@
-
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mic, Square, Play, Volume2, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { shadowingExercises } from '@/lib/shadowing-data';
+import { part1Exercises } from '@/lib/part1-data';
+import { part3Exercises } from '@/lib/part3-data';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-const speakingQuestions = [
-  {
-    id: 'spk1',
-    topic: 'Part 2: Describe a website you have bought something from.',
-    modelAnswerUrl: '/audio/placeholder-model-answer-1.mp3', // Placeholder
-  },
-  {
-    id: 'spk2',
-    topic: 'Part 2: Describe a time you saw something interesting on social media.',
-    modelAnswerUrl: '/audio/placeholder-model-answer-2.mp3',
-  },
-  {
-    id: 'spk3',
-    topic: 'Part 2: Describe a person in your family who you admire.',
-    modelAnswerUrl: '/audio/placeholder-model-answer-3.mp3',
-  },
-];
+import ShadowingExercisePlayer from '@/components/practice/shadowing-exercise-player';
+import Part1ExercisePlayer from '@/components/practice/part1-exercise-player';
+import Part3ExercisePlayer from '@/components/practice/part3-exercise-player';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function SpeakingClient() {
-  const [selectedQuestion, setSelectedQuestion] = useState(speakingQuestions[0]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState('');
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const { toast } = useToast();
+    const [hasPermission, setHasPermission] = useState(false);
+    const [activeTab, setActiveTab] = useState('part1');
+    const [selectedPart2ExerciseId, setSelectedPart2ExerciseId] = useState<string>(shadowingExercises[0]?.id || '');
+    const { toast } = useToast();
 
-  useEffect(() => {
-    async function getMicrophonePermission() {
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        setHasPermission(true);
-      } catch (err) {
-        console.error("Error getting microphone permission:", err);
-        setHasPermission(false);
-      }
-    }
-    getMicrophonePermission();
-  }, []);
+    const selectedPart2Exercise = shadowingExercises.find(ex => ex.id === selectedPart2ExerciseId);
+    const part1Exercise = part1Exercises[0]; 
+    // This logic assumes Part 3 is linked to the selected Part 2.
+    // A more complex app might have a separate selector for Part 3.
+    const part3Exercise = part3Exercises.find(ex => ex.part2TopicId === selectedPart2ExerciseId) || part3Exercises[0]; 
 
-  const startRecording = async () => {
-    if (isRecording) return;
-    if (hasPermission === false) {
-       toast({
-          variant: 'destructive',
-          title: 'Microphone Access Denied',
-          description: 'Please enable microphone permissions in your browser settings to use the speaking practice feature.',
-        });
-        return;
-    }
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
-        audioChunksRef.current = [];
-
-        mediaRecorder.ondataavailable = (event) => {
-            audioChunksRef.current.push(event.data);
+    useEffect(() => {
+        const getPermission = async () => {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    setHasPermission(true);
+                    // Important: stop the track immediately after getting permission
+                    stream.getTracks().forEach(track => track.stop());
+                } else {
+                     setHasPermission(false);
+                     toast({
+                        variant: 'destructive',
+                        title: 'Audio Recording Not Supported',
+                        description: 'Your browser does not support microphone access.',
+                    });
+                }
+            } catch (err) {
+                console.error('Error getting microphone permission:', err);
+                setHasPermission(false);
+                toast({
+                    variant: 'destructive',
+                    title: 'Microphone Access Denied',
+                    description: 'Please enable microphone permissions in your browser settings to use the recording feature.',
+                });
+            }
         };
+        getPermission();
+    }, [toast]);
+    
+    return (
+        <div className="space-y-8 max-w-5xl mx-auto">
+            <header className="text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold font-headline text-primary">Speaking Practice</h1>
+                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Hone your speaking skills for all parts of the test with targeted exercises and AI feedback.</p>
+            </header>
 
-        mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            setAudioURL(audioUrl);
-            stream.getTracks().forEach(track => track.stop()); // Stop the tracks to turn off the microphone indicator
-        };
+            {!hasPermission && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Microphone Permission Required</AlertTitle>
+                    <AlertDescription>
+                        Recording features are disabled. Please grant microphone access in your browser to practice.
+                    </AlertDescription>
+                </Alert>
+            )}
 
-        mediaRecorder.start();
-        setIsRecording(true);
-        setAudioURL(''); // Clear previous recording
-    } catch (err) {
-        console.error("Error starting recording:", err);
-        toast({
-            variant: 'destructive',
-            title: 'Recording Error',
-            description: 'Could not start recording. Please check your microphone.',
-        });
-    }
-  };
-
-  const stopRecording = () => {
-    if (!isRecording || !mediaRecorderRef.current) return;
-    mediaRecorderRef.current.stop();
-    setIsRecording(false);
-  };
-
-  const handleQuestionChange = (questionId: string) => {
-    const question = speakingQuestions.find(q => q.id === questionId);
-    if (question) {
-        setSelectedQuestion(question);
-        setAudioURL('');
-        if (isRecording) {
-            stopRecording();
-        }
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
-      <header className="text-center">
-        <h1 className="text-3xl sm:text-4xl font-bold font-headline text-primary">Speaking Practice</h1>
-        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Select a question, record your response, and then compare it to a model answer.</p>
-      </header>
-
-      {hasPermission === false && (
-          <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Microphone Access Required</AlertTitle>
-              <AlertDescription>
-                This feature requires access to your microphone. Please enable it in your browser settings and refresh the page.
-              </AlertDescription>
-          </Alert>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Practice Question</CardTitle>
-          <CardDescription>Choose a topic to practice your speaking.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Select onValueChange={handleQuestionChange} defaultValue={selectedQuestion.id}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a practice question" />
-            </SelectTrigger>
-            <SelectContent>
-              {speakingQuestions.map((q) => (
-                <SelectItem key={q.id} value={q.id}>
-                  {q.topic}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="p-4 bg-muted/50 rounded-lg border">
-            <p className="text-foreground font-semibold">{selectedQuestion.topic}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-            <CardTitle>Record Your Answer</CardTitle>
-            <CardDescription>Click the record button and speak for 1-2 minutes. Click stop when you're finished.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center gap-4">
-            <div className="flex items-center gap-4">
-                <Button onClick={startRecording} disabled={isRecording || hasPermission !== true} size="lg" variant="destructive" className="gap-2">
-                    <Mic className="h-5 w-5" />
-                    Record
-                </Button>
-                <Button onClick={stopRecording} disabled={!isRecording} size="lg" className="gap-2">
-                    <Square className="h-5 w-5" />
-                    Stop
-                </Button>
-            </div>
-            {isRecording && <p className="text-sm text-destructive animate-pulse">Recording in progress...</p>}
-        </CardContent>
-      </Card>
-
-       <Card>
-        <CardHeader>
-            <CardTitle>Review & Compare</CardTitle>
-            <CardDescription>Listen to your recording and compare it with the model answer.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><Play className="h-5 w-5 text-primary"/> Your Answer</h3>
-                {audioURL ? (
-                    <audio src={audioURL} controls className="w-full" />
-                ) : (
-                    <div className="flex items-center justify-center h-14 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Your recording will appear here.</p>
-                    </div>
-                )}
-            </div>
-             <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><Volume2 className="h-5 w-5 text-primary"/> Model Answer</h3>
-                <audio src={selectedQuestion.modelAnswerUrl} controls className="w-full" />
-                <p className="text-xs text-muted-foreground">Note: Model answer audio is for demonstration purposes.</p>
-            </div>
-        </CardContent>
-      </Card>
-      
-    </div>
-  );
+            <Tabs defaultValue="part1" className="w-full" onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="part1">Part 1: The Interview</TabsTrigger>
+                    <TabsTrigger value="part2">Part 2: The Long Turn</TabsTrigger>
+                    <TabsTrigger value="part3">Part 3: The Discussion</TabsTrigger>
+                </TabsList>
+                 <TabsContent value="part1" className="mt-6">
+                    {activeTab === 'part1' && (
+                        <Card className="shadow-lg">
+                            <CardHeader>
+                                <CardTitle>Part 1 Practice</CardTitle>
+                                <CardDescription>Practice answering common interview questions about familiar topics. Record your answer and get comprehensive AI feedback.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {part1Exercise ? (
+                                    <Part1ExercisePlayer exercise={part1Exercise} hasMicrophonePermission={hasPermission} />
+                                ) : (
+                                    <p>No Part 1 exercises available yet.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+                <TabsContent value="part2" className="mt-6">
+                   {activeTab === 'part2' && (
+                        <Card className="shadow-lg">
+                            <CardHeader>
+                                <CardTitle>Part 2 Practice</CardTitle>
+                                <CardDescription>Choose a topic to practice your 2-minute monologue. Use the Shadowing mode to perfect a model answer, then record your own for full evaluation.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {shadowingExercises.length > 0 ? (
+                                    <>
+                                        <Select value={selectedPart2ExerciseId} onValueChange={setSelectedPart2ExerciseId}>
+                                            <SelectTrigger className="w-full md:w-[400px]">
+                                                <SelectValue placeholder="Select an exercise" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {shadowingExercises.map((exercise) => (
+                                                    <SelectItem key={exercise.id} value={exercise.id}>
+                                                        {exercise.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        
+                                        {selectedPart2Exercise && (
+                                            <ShadowingExercisePlayer key={selectedPart2Exercise.id} exercise={selectedPart2Exercise} hasMicrophonePermission={hasPermission} />
+                                        )}
+                                    </>
+                                ) : (
+                                    <p>No Part 2 exercises available.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                   )}
+                </TabsContent>
+                <TabsContent value="part3" className="mt-6">
+                    {activeTab === 'part3' && (
+                        <Card className="shadow-lg">
+                            <CardHeader>
+                                <CardTitle>Part 3 Practice</CardTitle>
+                                <CardDescription>Practice answering abstract follow-up questions related to your Part 2 topic. Record your answer for detailed AI analysis.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {part3Exercise ? (
+                                    <Part3ExercisePlayer exercise={part3Exercise} hasMicrophonePermission={hasPermission} />
+                                ) : (
+                                    <p>No Part 3 exercises available for this topic yet.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
 }
