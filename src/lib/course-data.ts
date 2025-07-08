@@ -104,7 +104,7 @@ export const foundationSkills = {
         ] as GrammarLesson[]
     },
     listeningLab: {
-        title: "Listening & Pronunciation Lab",
+        title: "Listening Lab",
         description: "Sharpen your listening and speaking clarity with focused drills.",
         icon: Ear,
         href: "/foundation-skills/listening-lab",
@@ -118,6 +118,12 @@ export const foundationSkills = {
             { id: 'al-2', title: 'Question', audioUrl: '/audio/placeholder-al-2.mp3', transcript: 'Could you please tell me where the nearest post office is?' },
             { id: 'al-3', title: 'Complex Sentence', audioUrl: '/audio/placeholder-al-3.mp3', transcript: 'Despite the heavy traffic, we managed to arrive at the airport with plenty of time to spare.' }
         ] as ActiveListeningExercise[],
+    },
+     speakingLab: {
+        title: "Speaking Lab",
+        description: "Practice all parts of the speaking test with AI feedback.",
+        icon: Mic,
+        href: "/foundation-skills/speaking-lab",
     },
     fluency: {
         title: "English Thinking & Fluency",
