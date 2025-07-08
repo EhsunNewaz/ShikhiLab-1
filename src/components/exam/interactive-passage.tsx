@@ -208,13 +208,15 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
     hideAllPopups();
 
     const target = e.target as HTMLElement;
-    const annotationId = target.closest('[data-annotation-id]')?.getAttribute('data-annotation-id');
+    const annotationElement = target.closest('[data-annotation-id]');
+    const annotationId = annotationElement?.getAttribute('data-annotation-id');
 
-    if (annotationId) {
+    if (annotationId && annotationElement) {
+        const rect = annotationElement.getBoundingClientRect();
         setContextMenu({
             visible: true,
-            x: e.clientX,
-            y: e.clientY,
+            x: rect.left + window.scrollX,
+            y: rect.top + window.scrollY,
             type: 'annotation',
             annotationId: annotationId,
         });
@@ -229,11 +231,17 @@ export function InteractivePassage({ id, text, as: Comp = 'div', className }: In
       toast({ variant: 'destructive', title: "Overlapping Selection", description: "Highlights cannot overlap." });
       return;
     }
+    
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
 
     setContextMenu({
         visible: true,
-        x: e.clientX,
-        y: e.clientY,
+        x: rect.left + window.scrollX,
+        y: rect.top + window.scrollY,
         type: 'selection',
         selection: offsets,
     });
