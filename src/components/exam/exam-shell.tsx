@@ -5,15 +5,15 @@ import type { ReactNode } from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { ExamHeader } from './exam-header';
 import { cn } from '@/lib/utils';
-import { NotesPanel } from './notes-panel';
 import { InactivityWarningDialog } from './inactivity-warning-dialog';
 import { HelpDialog } from './help-dialog';
+import { ExamSettings } from './exam-settings';
+import { Button } from '../ui/button';
 
 interface ExamShellProps {
   children: ReactNode;
   onTimeUp: () => void;
   isSubmitted: boolean;
-  onSubmit: () => void;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -22,11 +22,11 @@ export function ExamShell({
   children,
   onTimeUp,
   isSubmitted,
-  onSubmit,
 }: ExamShellProps) {
-  const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
+  const [isScreenHidden, setIsScreenHidden] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -45,24 +45,20 @@ export function ExamShell({
   useEffect(() => {
     // --- Disable Browser Functions ---
     const handleContextMenu = (e: MouseEvent) => {
-        e.preventDefault();
+        // Allow context menu only inside the interactive passage
+        if (!(e.target as HTMLElement).closest('[data-interactive-passage="true"]')) {
+            e.preventDefault();
+        }
     };
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F12' || (e.ctrlKey && ['c', 'v', 'x'].includes(e.key))) {
+      if (e.key === 'F12') {
         e.preventDefault();
       }
-    };
-    
-    const handleCopyPaste = (e: ClipboardEvent) => {
-        e.preventDefault();
     };
 
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('copy', handleCopyPaste);
-    document.addEventListener('paste', handleCopyPaste);
-    document.addEventListener('cut', handleCopyPaste);
 
     // --- Inactivity Timer ---
     const activityEvents: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
@@ -74,9 +70,6 @@ export function ExamShell({
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('copy', handleCopyPaste);
-      document.removeEventListener('paste', handleCopyPaste);
-      document.removeEventListener('cut', handleCopyPaste);
       
       activityEvents.forEach(event => window.removeEventListener(event, resetInactivityTimer));
       if (inactivityTimer.current) {
@@ -105,21 +98,29 @@ export function ExamShell({
     >
       <ExamHeader
         onTimeUp={onTimeUp}
-        isSubmitted={isSubmitted}
-        onSubmit={onSubmit}
-        onToggleNotes={() => setIsNotesPanelOpen((prev) => !prev)}
+        onToggleHelp={() => setIsHelpOpen(true)}
+        onToggleSettings={() => setIsSettingsOpen(true)}
+        onToggleHide={() => setIsScreenHidden(true)}
       />
 
       {/* Main Content Area - with padding for header and footer */}
-      <main className="h-full bg-white pt-[60px] pb-[72px]">
+      <main className="h-full bg-white pt-[60px] pb-[120px]">
         {children}
       </main>
 
+      {isScreenHidden && (
+          <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-4">
+              <h2 className="text-2xl font-bold">Test Paused</h2>
+              <p>Click the button below to resume the test.</p>
+              <Button onClick={() => setIsScreenHidden(false)}>Resume Test</Button>
+          </div>
+      )}
+
 
       {/* Popups and Overlays */}
-      <NotesPanel isOpen={isNotesPanelOpen} onClose={() => setIsNotesPanelOpen(false)} />
       <InactivityWarningDialog isOpen={showInactivityModal} onContinue={handleContinue} />
       <HelpDialog isOpen={isHelpOpen} onOpenChange={setIsHelpOpen} />
+      <ExamSettings isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </div>
   );
 }

@@ -1,18 +1,22 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, Volume2, ALargeSmall } from 'lucide-react';
+import { Settings, Check, Volume2, ALargeSmall } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useMounted } from '@/hooks/use-mounted';
 import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
+import { Label } from '../ui/label';
 
 type ContrastOption = 'black-on-white' | 'yellow-on-black' | 'white-on-black';
 type TextSizeOption = 'standard' | 'large' | 'extra-large';
@@ -29,7 +33,12 @@ const textSizeOptions: { value: TextSizeOption; label:string; class: string }[] 
   { value: 'extra-large', label: 'Extra Large', class: 'text-size-xl' },
 ];
 
-export function ExamSettings() {
+interface ExamSettingsProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ExamSettings({ isOpen, onOpenChange }: ExamSettingsProps) {
   const [contrast, setContrast] = useState<ContrastOption>('black-on-white');
   const [textSize, setTextSize] = useState<TextSizeOption>('standard');
   const mounted = useMounted();
@@ -69,49 +78,55 @@ export function ExamSettings() {
       }
     };
   }, [mounted]);
-
-  const buttonJsx = (
-     <Button variant="ghost" size="icon" className="text-exam-text hover:bg-gray-200" disabled={!mounted}>
-        <ALargeSmall className="h-5 w-5" />
-    </Button>
-  );
-
-  if (!mounted) {
-    return buttonJsx;
-  }
+  
+  if (!mounted) return null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        {buttonJsx}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="bg-white">
-        <DropdownMenuLabel>Colour contrast</DropdownMenuLabel>
-        {contrastOptions.map(option => (
-            <DropdownMenuItem key={option.value} onSelect={() => setContrast(option.value)}>
-                <div className="w-5 mr-2">
-                    {contrast === option.value && <Check className="h-4 w-4" />}
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Screen Settings</AlertDialogTitle>
+          <AlertDialogDescription>Adjust the appearance for better readability.</AlertDialogDescription>
+        </AlertDialogHeader>
+        
+        <div className="space-y-6 py-4">
+            <div className="space-y-3">
+                <Label>Color Contrast</Label>
+                <div className="flex gap-2">
+                    {contrastOptions.map(option => (
+                        <Button key={option.value} variant={contrast === option.value ? 'default' : 'outline'} onClick={() => setContrast(option.value)}>
+                            {contrast === option.value && <Check className="mr-2 h-4 w-4" />}
+                            {option.label}
+                        </Button>
+                    ))}
                 </div>
-                {option.label}
-            </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Text size</DropdownMenuLabel>
-        {textSizeOptions.map(option => (
-             <DropdownMenuItem key={option.value} onSelect={() => setTextSize(option.value)}>
-                <div className="w-5 mr-2">
-                    {textSize === option.value && <Check className="h-4 w-4" />}
+            </div>
+             <div className="space-y-3">
+                <Label>Text Size</Label>
+                <div className="flex gap-2">
+                    {textSizeOptions.map(option => (
+                         <Button key={option.value} variant={textSize === option.value ? 'default' : 'outline'} onClick={() => setTextSize(option.value)}>
+                            {textSize === option.value && <Check className="mr-2 h-4 w-4" />}
+                            {option.label}
+                        </Button>
+                    ))}
                 </div>
-                {option.label}
-            </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Volume</DropdownMenuLabel>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <Volume2 className="h-4 w-4 mr-2"/>
-            <Slider defaultValue={[100]} max={100} step={1} className="w-[150px]"/>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            </div>
+             <div className="space-y-3">
+                <Label>Volume</Label>
+                <div className="flex items-center gap-2">
+                    <Volume2 className="h-5 w-5"/>
+                    <Slider defaultValue={[100]} max={100} step={1} className="w-full"/>
+                </div>
+            </div>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogAction asChild>
+            <Button onClick={() => onOpenChange(false)}>Close</Button>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

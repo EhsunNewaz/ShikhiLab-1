@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth-hook';
@@ -27,13 +27,15 @@ const readingTest = readingTestData[0];
 
 // We combine the static question data with a dynamic 'status'
 interface QuestionState extends ReadingQuestionData {
-  status: 'unanswered' | 'answered' | 'reviewed';
+  status: 'unanswered' | 'answered';
+  isReviewed: boolean;
 }
 
 // Initialize question state from static data
 const initialQuestions: QuestionState[] = readingTest.questions.map(q => ({
   ...q,
   status: 'unanswered',
+  isReviewed: false,
 }));
 
 
@@ -61,7 +63,7 @@ function QuestionRenderer({
   onAnswerChange,
   isSubmitted,
 }: {
-  question: QuestionState;
+  question: ReadingQuestionData;
   answer: any;
   onAnswerChange: (questionId: string, value: any) => void;
   isSubmitted: boolean;
@@ -199,7 +201,7 @@ function QuestionPanel({
   onAnswerChange,
   isSubmitted,
 }: {
-  questionGroup: QuestionState[];
+  questionGroup: ReadingQuestionData[];
   answers: Record<string, any>;
   onAnswerChange: (questionId: string, value: any) => void;
   isSubmitted: boolean;
@@ -240,10 +242,10 @@ function QuestionPanel({
 }
 
 export default function MockTestPage() {
-  const [questions, setQuestions] = useState<QuestionState[]>(initialQuestions);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [score, setScore] = useState(0);
+  const [reviewedQuestions, setReviewedQuestions] = useState<Set<string>>(new Set());
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -260,8 +262,17 @@ export default function MockTestPage() {
       return {};
     }
   });
-
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  const questionsWithStatus = useMemo((): QuestionState[] => {
+    return initialQuestions.map(q => ({
+        ...q,
+        status: (Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : !!answers[q.id]) ? 'answered' : 'unanswered',
+        isReviewed: reviewedQuestions.has(q.id)
+    }))
+  }, [answers, reviewedQuestions]);
+
 
   // Effect to save answers to localStorage whenever they change
   useEffect(() => {
@@ -274,25 +285,6 @@ export default function MockTestPage() {
     }
   }, [answers, storageKey, isSubmitted]);
 
-  // Effect to update question status when an answer changes
-  useEffect(() => {
-    if (isSubmitted) return;
-    
-    setQuestions(prevQuestions =>
-      prevQuestions.map(q => {
-        const answer = answers[q.id];
-        const isAnswered = Array.isArray(answer) ? answer.length > 0 : !!answer;
-        
-        if (isAnswered && q.status !== 'reviewed') {
-          return { ...q, status: 'answered' };
-        }
-        if (!isAnswered && q.status === 'answered') {
-            return { ...q, status: 'unanswered' };
-        }
-        return q;
-      })
-    );
-  }, [answers, isSubmitted]);
 
   const handleAnswerChange = (questionId: string, value: any) => {
     if (isSubmitted) return;
@@ -308,7 +300,7 @@ export default function MockTestPage() {
     setShowSubmitDialog(false);
     
     let calculatedScore = 0;
-    for (const q of questions) {
+    for (const q of initialQuestions) {
         const userAnswer = answers[q.id];
         if (q.type === 'multiple-answer') {
             const userAnswerSorted = [...(userAnswer || [])].sort();
@@ -330,7 +322,7 @@ export default function MockTestPage() {
       const newResult = {
         testId: readingTest.id,
         score: calculatedScore,
-        total: questions.length,
+        total: initialQuestions.length,
         completedAt: serverTimestamp(),
       };
       try {
@@ -355,34 +347,55 @@ export default function MockTestPage() {
   const handleSelectQuestion = (index: number) => {
       setCurrentQuestionIndex(index);
   };
+  
+  const handleNext = () => {
+      setCurrentQuestionIndex(prev => Math.min(prev + 1, initialQuestions.length - 1));
+  }
+  
+  const handlePrev = () => {
+      setCurrentQuestionIndex(prev => Math.max(prev - 1, 0));
+  }
+  
+  const handleToggleReview = () => {
+      const currentId = initialQuestions[currentQuestionIndex].id;
+      setReviewedQuestions(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(currentId)) {
+              newSet.delete(currentId);
+          } else {
+              newSet.add(currentId);
+          }
+          return newSet;
+      })
+  }
 
-  const currentPassageIndex = questions[currentQuestionIndex]?.passage - 1;
+  const currentPassageIndex = initialQuestions[currentQuestionIndex]?.passage - 1;
 
   if (currentPassageIndex === undefined) {
     return <div>Loading test...</div>
   }
   
   // --- Group questions for display ---
-  const currentQuestion = questions[currentQuestionIndex];
+  const currentQuestion = initialQuestions[currentQuestionIndex];
   // Find the start of the consecutive group of questions with the same instruction
   let groupStartIndex = currentQuestionIndex;
   while (
     groupStartIndex > 0 &&
-    questions[groupStartIndex - 1].instruction === currentQuestion.instruction &&
-    questions[groupStartIndex - 1].passage === currentQuestion.passage
+    initialQuestions[groupStartIndex - 1].instruction === currentQuestion.instruction &&
+    initialQuestions[groupStartIndex - 1].passage === currentQuestion.passage
   ) {
     groupStartIndex--;
   }
   // Find the end of the group
   let groupEndIndex = currentQuestionIndex;
   while (
-    groupEndIndex < questions.length - 1 &&
-    questions[groupEndIndex + 1].instruction === currentQuestion.instruction &&
-    questions[groupEndIndex + 1].passage === currentQuestion.passage
+    groupEndIndex < initialQuestions.length - 1 &&
+    initialQuestions[groupEndIndex + 1].instruction === currentQuestion.instruction &&
+    initialQuestions[groupEndIndex + 1].passage === currentQuestion.passage
   ) {
     groupEndIndex++;
   }
-  const currentQuestionGroup = questions.slice(groupStartIndex, groupEndIndex + 1);
+  const currentQuestionGroup = initialQuestions.slice(groupStartIndex, groupEndIndex + 1);
 
 
   return (
@@ -390,7 +403,6 @@ export default function MockTestPage() {
         <ExamShell
             onTimeUp={handleTimeUp}
             isSubmitted={isSubmitted}
-            onSubmit={() => setShowSubmitDialog(true)}
         >
             <SplitScreenLayout
             leftPanel={
@@ -403,8 +415,8 @@ export default function MockTestPage() {
             rightPanel={
               <>
                 <ScrollArea className="h-full">
-                    <div className="space-y-6 p-5 pb-24"> {/* Padding at bottom for floating buttons */}
-                        {isSubmitted && <ResultsCard score={score} total={questions.length} />}
+                    <div className="space-y-6 p-5 pb-48"> {/* Padding at bottom for floating buttons */}
+                        {isSubmitted && <ResultsCard score={score} total={initialQuestions.length} />}
                         <QuestionPanel
                             questionGroup={currentQuestionGroup}
                             answers={answers}
@@ -417,10 +429,14 @@ export default function MockTestPage() {
             }
             />
              <BottomPanel
-                questions={questions}
+                questions={questionsWithStatus}
                 currentQuestionIndex={currentQuestionIndex}
                 onSelectQuestion={handleSelectQuestion}
                 isSubmitted={isSubmitted}
+                onNext={handleNext}
+                onPrev={handlePrev}
+                onReview={handleToggleReview}
+                onSubmit={() => setShowSubmitDialog(true)}
             />
         </ExamShell>
         <SubmitConfirmationDialog 

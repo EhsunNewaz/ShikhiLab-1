@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useMounted } from '@/hooks/use-mounted';
+import { Clock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TimerProps {
   initialMinutes?: number;
@@ -29,17 +31,26 @@ export function ExamTimer({ initialMinutes = 60, onTimeUp }: TimerProps) {
   }, [timeLeft, onTimeUp, mounted]);
 
   const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
 
-  const display =
-    minutes > 1
-      ? `${minutes} minutes remaining`
-      : minutes === 1
-      ? '1 minute remaining'
-      : 'Less than a minute remaining';
-      
-  const initialDisplay = `${initialMinutes} minutes remaining`;
+  const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const tooltipDisplay = `${minutes} minutes and ${seconds} seconds remaining`;
+  
+  const initialDisplay = `${String(initialMinutes).padStart(2, '0')}:00`;
 
   return (
-    <span className="text-sm">{mounted ? display : initialDisplay}</span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-2 font-semibold text-gray-700">
+            <Clock className="h-5 w-5" />
+            <span className="text-lg tabular-nums">{mounted ? display : initialDisplay}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltipDisplay}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

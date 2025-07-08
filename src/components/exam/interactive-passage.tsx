@@ -1,10 +1,14 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect, type MouseEvent } from 'react';
+import { useState, useMemo, useRef, useEffect, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import Draggable from 'react-draggable';
+import { X } from 'lucide-react';
+
 
 // --- TYPES ---
 interface Annotation {
@@ -15,19 +19,19 @@ interface Annotation {
   noteText?: string;
 }
 
-interface TempSelection {
-  start: number;
-  end: number;
-}
-
-interface PopupState {
+interface ContextMenuState {
   x: number;
   y: number;
   visible: boolean;
+  type: 'selection' | 'annotation';
+  annotationId?: string;
+  selection?: { start: number, end: number };
 }
 
-interface RemovePopupState extends PopupState {
-  annotationId: string | null;
+interface NotesPanelState {
+    visible: boolean;
+    annotationId: string;
+    noteText: string;
 }
 
 interface InteractivePassageProps {
@@ -36,100 +40,84 @@ interface InteractivePassageProps {
   className?: string;
 }
 
-// --- POPUP COMPONENTS ---
-
-const SelectionPopup = ({ x, y, onHighlight, onNote }: { x: number; y: number; onHighlight: () => void; onNote: () => void; }) => {
-  return (
-    <div
-      className="absolute z-50 flex items-center rounded-md shadow-lg bg-[#2C3E50] text-white font-sans"
-      style={{ top: y, left: x, transform: 'translateX(-50%)' }}
-      data-popup="true"
-    >
-      <button onClick={onNote} className="px-4 py-2 text-sm hover:bg-black/20 rounded-l-md">
-        Note
-      </button>
-      <div className="w-px h-4 bg-white/30"></div>
-      <button onClick={onHighlight} className="px-4 py-2 text-sm hover:bg-black/20 rounded-r-md">
-        Highlight
-      </button>
-    </div>
-  );
+// --- SUB-COMPONENTS ---
+const ContextMenuPopup = ({ state, annotations, onHighlight, onNote, onClear, onClearAll, onViewNote }: { state: ContextMenuState; annotations: Annotation[]; onHighlight: () => void; onNote: () => void; onClear: (id: string) => void; onClearAll: () => void; onViewNote: (id: string) => void; }) => {
+    const currentAnnotation = state.annotationId ? annotations.find(a => a.id === state.annotationId) : null;
+    
+    return (
+         <div
+            data-popup="true"
+            className="absolute z-50 flex flex-col min-w-[180px] rounded-md shadow-lg bg-white border border-gray-300 text-sm"
+            style={{ top: state.y, left: state.x }}
+         >
+            {state.type === 'selection' && (
+                <>
+                    <button onClick={onHighlight} className="text-left px-4 py-2 hover:bg-gray-100">Highlight</button>
+                    <button onClick={onNote} className="text-left px-4 py-2 hover:bg-gray-100">Notes</button>
+                </>
+            )}
+            {state.type === 'annotation' && currentAnnotation && (
+                 <>
+                    {currentAnnotation.type === 'note' && (
+                         <button onClick={() => onViewNote(currentAnnotation.id)} className="text-left px-4 py-2 hover:bg-gray-100">View/Edit Note</button>
+                    )}
+                    <button onClick={() => onClear(currentAnnotation.id)} className="text-left px-4 py-2 hover:bg-gray-100">Clear</button>
+                    <button onClick={onClearAll} className="text-left px-4 py-2 hover:bg-gray-100">Clear All</button>
+                </>
+            )}
+         </div>
+    );
 };
 
-const NoteInputPopup = ({ x, y, onSave, onCancel }: { x: number; y: number; onSave: (noteText: string) => void; onCancel: () => void; }) => {
-    const [noteText, setNoteText] = useState('');
-    
-    const handleSave = () => {
-        if (noteText.trim()) {
-            onSave(noteText);
-        }
-    }
 
-    return (
-        <div
-            className="absolute z-50 flex flex-col gap-2 rounded-md shadow-lg bg-white border border-gray-300 p-3 w-64"
-            style={{ top: y + 10, left: x, transform: 'translateX(-50%)' }}
-            data-popup="true"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
-        >
-            <Textarea 
-                placeholder="Please enter your notes" 
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                className="resize-none"
-                rows={4}
-            />
-            <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
-                <Button size="sm" onClick={handleSave} disabled={!noteText.trim()}>Save</Button>
+const NotesPanel = ({ noteText, onClose, onSave }: { noteText: string; onClose: () => void; onSave: (text: string) => void; }) => {
+  const nodeRef = useRef(null);
+  const [text, setText] = useState(noteText);
+  
+  return (
+    <Draggable handle=".handle" nodeRef={nodeRef} defaultPosition={{x: 200, y: 100}}>
+        <div ref={nodeRef} className="fixed z-40 w-[300px]" data-popup="true">
+            <div className="h-[400px] flex flex-col bg-[#fffacd] border-gray-400 shadow-2xl">
+                <div className="handle flex flex-row items-center justify-between p-3 bg-gray-200/50 cursor-move">
+                    <h3 className="text-base font-semibold text-gray-800">Notes</h3>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6" 
+                        onClick={onClose}
+                        onMouseDown={(e) => e.stopPropagation()}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="p-2 flex-grow flex flex-col gap-2">
+                    <Textarea 
+                        className="h-full w-full resize-none border-gray-300 bg-white focus-visible:ring-blue-500 font-exam text-sm" 
+                        placeholder="Type your notes here..."
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                    />
+                    <Button onClick={() => onSave(text)} size="sm" className="self-end">Save and Close</Button>
+                </div>
             </div>
         </div>
-    )
-}
-
-const RemovePopup = ({ x, y, onRemove, label }: { x: number; y: number; onRemove: () => void; label: string }) => {
-  return (
-    <div
-      className="absolute z-50 flex items-center rounded-md shadow-lg bg-[#2C3E50] text-white font-sans"
-      style={{ top: y, left: x, transform: 'translateX(-50%)' }}
-      data-popup="true"
-    >
-      <button onClick={onRemove} className="px-4 py-2 text-sm hover:bg-black/20 rounded-md">
-        {label}
-      </button>
-    </div>
+    </Draggable>
   );
-};
+}
 
 
 // --- MAIN COMPONENT ---
 export function InteractivePassage({ text, as: Comp = 'div', className }: InteractivePassageProps) {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [tempSelection, setTempSelection] = useState<TempSelection | null>(null);
-  
-  const [selectionPopup, setSelectionPopup] = useState<PopupState>({ x: 0, y: 0, visible: false });
-  const [noteInputPopup, setNoteInputPopup] = useState<PopupState>({ x: 0, y: 0, visible: false });
-  const [removePopup, setRemovePopup] = useState<RemovePopupState>({ x: 0, y: 0, visible: false, annotationId: null });
-  
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({ x: 0, y: 0, visible: false, type: 'selection' });
+  const [notesPanel, setNotesPanel] = useState<NotesPanelState>({ visible: false, annotationId: '', noteText: ''});
   const passageRef = useRef<HTMLDivElement>(null);
-
-  // Combines permanent and temporary selections for rendering
-  const allAnnotationsForRender = useMemo(() => {
-    const renderedAnnotations: (Annotation | (TempSelection & { id: string, type: 'temporary' }))[] = [...annotations];
-    if (tempSelection) {
-      renderedAnnotations.push({ ...tempSelection, id: 'temp', type: 'temporary' as const });
-    }
-    return renderedAnnotations.sort((a, b) => a.start - b.start);
-  }, [annotations, tempSelection]);
+  const { toast } = useToast();
 
   const hideAllPopups = () => {
-    setSelectionPopup({ x: 0, y: 0, visible: false });
-    setNoteInputPopup({ x: 0, y: 0, visible: false });
-    setRemovePopup({ x: 0, y: 0, visible: false, annotationId: null });
-    setTempSelection(null);
-  }
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  };
 
-  // Hide popups on any outside click or Esc key
   useEffect(() => {
     const handleClickOutside = (event: globalThis.MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -137,18 +125,8 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
         hideAllPopups();
       }
     };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        hideAllPopups();
-      }
-    };
-    
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const getSelectionOffsets = (container: HTMLElement) => {
@@ -158,69 +136,73 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
     const range = selection.getRangeAt(0);
     if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null;
 
-    let startOffset = -1;
-    let endOffset = -1;
-    let accumulatedLength = 0;
+    let startOffset = 0;
+    const preSelectionRange = document.createRange();
+    preSelectionRange.selectNodeContents(container);
+    preSelectionRange.setEnd(range.startContainer, range.startOffset);
+    startOffset = preSelectionRange.toString().length;
+    
+    const endOffset = startOffset + range.toString().length;
+    
+    if (startOffset === endOffset) return null;
 
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
-    let node;
-    while ((node = walker.nextNode())) {
-        if (startOffset === -1 && node === range.startContainer) {
-            startOffset = accumulatedLength + range.startOffset;
-        }
-        if (node === range.endContainer) {
-            endOffset = accumulatedLength + range.endOffset;
-            break;
-        }
-        accumulatedLength += node.textContent?.length || 0;
-    }
-    
-    if (startOffset !== -1 && endOffset !== -1) {
-        return { start: startOffset, end: endOffset };
-    }
-    return null;
+    return { start: startOffset, end: endOffset };
   };
-  
-  const handleMouseUp = () => {
-    if (!passageRef.current || noteInputPopup.visible || removePopup.visible) return;
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
-    
-    if ((selection.anchorNode?.parentElement as HTMLElement)?.dataset.annotationId) {
-        selection.removeAllRanges();
+
+  const handleContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+    hideAllPopups();
+
+    const target = e.target as HTMLElement;
+    const annotationId = target.closest('[data-annotation-id]')?.getAttribute('data-annotation-id');
+
+    if (annotationId) {
+        setContextMenu({
+            visible: true,
+            x: e.clientX,
+            y: e.clientY,
+            type: 'annotation',
+            annotationId: annotationId,
+        });
         return;
     }
 
-    const offsets = getSelectionOffsets(passageRef.current);
+    const offsets = getSelectionOffsets(passageRef.current!);
     if (!offsets) return;
 
     const isOverlapping = annotations.some(h => (offsets.start < h.end && offsets.end > h.start));
-    if (isOverlapping) return;
-
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    const containerRect = passageRef.current.getBoundingClientRect();
-    
-    setSelectionPopup({
-        visible: true,
-        x: rect.left - containerRect.left + rect.width / 2,
-        y: rect.top - containerRect.top - 45,
-    });
-    setRemovePopup({ x: 0, y: 0, visible: false, annotationId: null });
-    setTempSelection(offsets);
-    selection.removeAllRanges();
-  };
-
-  const addAnnotation = (type: 'highlight' | 'note', noteText?: string) => {
-    if (!tempSelection) return;
-    const isOverlapping = annotations.some(h => (tempSelection.start < h.end && tempSelection.end > h.start));
     if (isOverlapping) {
-      hideAllPopups();
+      toast({ variant: 'destructive', title: "Overlapping Selection", description: "Highlights cannot overlap." });
       return;
-    };
+    }
 
-    setAnnotations(prev => [...prev, { ...tempSelection, id: crypto.randomUUID(), type, noteText }]);
+    setContextMenu({
+        visible: true,
+        x: e.clientX,
+        y: e.clientY,
+        type: 'selection',
+        selection: offsets,
+    });
+  }
+
+  const addAnnotation = (type: 'highlight' | 'note', noteText: string = '') => {
+    const selection = contextMenu.selection;
+    if (!selection) return;
+
+    const newAnnotation: Annotation = { ...selection, id: crypto.randomUUID(), type, noteText };
+    setAnnotations(prev => [...prev, newAnnotation].sort((a,b) => a.start - b.start));
+    
+    if (type === 'note') {
+        setNotesPanel({ visible: true, annotationId: newAnnotation.id, noteText });
+    }
+    
     hideAllPopups();
+  };
+  
+  const handleUpdateNote = (annotationId: string, text: string) => {
+    setAnnotations(prev => prev.map(ann => 
+        ann.id === annotationId ? { ...ann, noteText: text } : ann
+    ));
   };
 
   const removeAnnotation = (id: string) => {
@@ -228,55 +210,41 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
     hideAllPopups();
   };
 
-  const handleOpenAnnotationPopup = (e: MouseEvent<HTMLSpanElement>, annotation: Annotation) => {
-    e.stopPropagation();
+  const removeAllAnnotations = () => {
+    setAnnotations([]);
     hideAllPopups();
-
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const containerRect = passageRef.current!.getBoundingClientRect();
-    
-    setRemovePopup({
-      visible: true,
-      x: rect.left - containerRect.left + rect.width / 2,
-      y: rect.top - containerRect.top - 45,
-      annotationId: annotation.id,
-    });
   }
+  
+  const handleViewNote = (annotationId: string) => {
+    const annotation = annotations.find(a => a.id === annotationId);
+    if (annotation) {
+        setNotesPanel({ visible: true, annotationId: annotation.id, noteText: annotation.noteText || '' });
+    }
+    hideAllPopups();
+  };
+
 
   const renderedPassage = useMemo(() => {
-    if (allAnnotationsForRender.length === 0) {
-      return text;
-    }
+    if (annotations.length === 0) return text;
 
-    const parts = [];
+    const parts: ReactNode[] = [];
     let lastIndex = 0;
 
-    allAnnotationsForRender.forEach(annotation => {
+    annotations.forEach(annotation => {
       if (annotation.start > lastIndex) {
         parts.push(text.substring(lastIndex, annotation.start));
-      }
-
-      let styleClass = '';
-      if (annotation.type === 'highlight') {
-          styleClass = 'bg-[#FFFF99] cursor-pointer';
-      } else if (annotation.type === 'note') {
-          styleClass = 'border-b-2 border-dotted border-blue-500 cursor-pointer';
-      } else if (annotation.type === 'temporary') {
-          styleClass = 'bg-green-300/70';
       }
 
       parts.push(
         <span
           key={annotation.id}
-          className={styleClass}
+          className={cn('cursor-pointer relative bg-[#FFFF99]')}
           data-annotation-id={annotation.id}
-          onClick={(e: MouseEvent<HTMLSpanElement>) => {
-            if (annotation.type === 'highlight' || annotation.type === 'note') {
-              handleOpenAnnotationPopup(e, annotation);
-            }
-          }}
         >
           {text.substring(annotation.start, annotation.end)}
+           {annotation.type === 'note' && (
+             <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full border border-white" title="This highlight has a note."/>
+           )}
         </span>
       );
       lastIndex = annotation.end;
@@ -285,55 +253,39 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
     if (lastIndex < text.length) {
       parts.push(text.substring(lastIndex));
     }
-    
     return parts;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, allAnnotationsForRender]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, annotations]);
+
 
   return (
-    <div className="relative">
-      <Comp
-        ref={passageRef}
-        className={cn("whitespace-pre-wrap select-text", className)}
-        onMouseUpCapture={handleMouseUp}
-      >
+    <div onContextMenu={handleContextMenu} className="relative" data-interactive-passage="true">
+      <Comp ref={passageRef} className={cn("whitespace-pre-wrap select-text", className)}>
         {renderedPassage}
       </Comp>
       
-      {selectionPopup.visible && tempSelection && (
-        <SelectionPopup
-            x={selectionPopup.x}
-            y={selectionPopup.y}
+      {contextMenu.visible && (
+        <ContextMenuPopup 
+            state={contextMenu} 
+            annotations={annotations}
             onHighlight={() => addAnnotation('highlight')}
-            onNote={() => {
-                setNoteInputPopup({ ...selectionPopup, visible: true });
-                setSelectionPopup(p => ({ ...p, visible: false }));
-            }}
+            onNote={() => addAnnotation('note')}
+            onClear={removeAnnotation}
+            onClearAll={removeAllAnnotations}
+            onViewNote={handleViewNote}
         />
       )}
 
-      {noteInputPopup.visible && tempSelection && (
-          <NoteInputPopup 
-            x={noteInputPopup.x}
-            y={noteInputPopup.y}
-            onSave={(noteText) => addAnnotation('note', noteText)}
-            onCancel={hideAllPopups}
+      {notesPanel.visible && (
+          <NotesPanel 
+              noteText={notesPanel.noteText}
+              onClose={() => setNotesPanel(prev => ({...prev, visible: false}))}
+              onSave={(text) => {
+                  handleUpdateNote(notesPanel.annotationId, text);
+                  setNotesPanel(prev => ({...prev, visible: false}));
+              }}
           />
       )}
-
-       {removePopup.visible && removePopup.annotationId && (() => {
-           const annotation = annotations.find(a => a.id === removePopup.annotationId);
-           if (!annotation) return null;
-
-           return (
-            <RemovePopup
-                x={removePopup.x}
-                y={removePopup.y}
-                onRemove={() => removeAnnotation(removePopup.annotationId!)}
-                label={annotation.type === 'highlight' ? "Remove highlight" : "Remove note"}
-            />
-           )
-       })()}
     </div>
   );
 }

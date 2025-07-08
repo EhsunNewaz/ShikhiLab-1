@@ -125,30 +125,34 @@ export const foundationSkills = {
     }
 }
 
-const generateQuestions = (passage: number, startId: number, count: number, type: 'multiple-choice' | 'fill-in-the-blank' = 'multiple-choice'): ReadingQuestion[] => {
+const generateQuestions = (passage: number, startId: number, count: number, type: 'multiple-choice' | 'fill-in-the-blank' | 'multiple-answer' = 'multiple-choice', optionsCount: number = 4): ReadingQuestion[] => {
     return Array.from({ length: count }, (_, i) => {
         const id = startId + i;
-        if (type === 'fill-in-the-blank') {
-            return {
-                id: `${id}`,
-                passage,
-                type: 'fill-in-the-blank',
-                instruction: 'Complete the sentence using ONE WORD from the passage.',
-                questionText: `This is a sample ___ for question ${id}.`,
-                options: [],
-                correctAnswer: 'answer',
-                explanation: `The correct answer is 'answer' because the text provides this information for question ${id}.`
-            }
+        const options = Array.from({ length: optionsCount }, (_, j) => `Option ${String.fromCharCode(65 + j)} for ${id}`);
+        let correctAnswer: any;
+        let questionType = type;
+
+        if (type === 'multiple-answer') {
+            correctAnswer = [options[1], options[2]]; // e.g. B and C
+        } else if (type === 'fill-in-the-blank') {
+            correctAnswer = 'sample';
+        } else {
+            correctAnswer = options[1]; // e.g. B
         }
+
         return {
             id: `${id}`,
             passage,
-            type: 'multiple-choice',
-            instruction: 'Choose the correct letter, A, B, C, or D.',
-            questionText: `What is the main point of the paragraph related to question ${id}?`,
-            options: [`Option A for ${id}`, `Option B for ${id}`, `Option C for ${id}`, `Option D for ${id}`],
-            correctAnswer: `Option B for ${id}`,
-            explanation: `The passage explicitly states the information corresponding to Option B for question ${id}.`
+            type: questionType,
+            instruction: type === 'fill-in-the-blank' 
+                ? 'Complete the sentence using ONE WORD from the passage.' 
+                : 'Choose the correct letter, A, B, C, or D.',
+            questionText: type === 'fill-in-the-blank' 
+                ? `This is a sample ___ for question ${id}.`
+                : `What is the main point of the paragraph related to question ${id}?`,
+            options,
+            correctAnswer,
+            explanation: `The correct answer is selected based on the passage's information for question ${id}.`
         };
     });
 };
@@ -172,15 +176,17 @@ Beyond the waggle dance, bees also rely on a combination of other cues. They hav
     ],
     questions: [
         // Passage 1: Questions 1-13
-        ...generateQuestions(1, 1, 5),
-        ...generateQuestions(1, 6, 8, 'fill-in-the-blank'),
+        ...generateQuestions(1, 1, 3, 'multiple-choice'),
+        ...generateQuestions(1, 4, 6, 'fill-in-the-blank'),
+        ...generateQuestions(1, 10, 4, 'multiple-answer', 5),
         // Passage 2: Questions 14-26
-        ...generateQuestions(2, 14, 7),
+        ...generateQuestions(2, 14, 7, 'multiple-choice', 3), // T/F/NG
         ...generateQuestions(2, 21, 6, 'fill-in-the-blank'),
         // Passage 3: Questions 27-40
-        ...generateQuestions(3, 27, 5),
-        ...generateQuestions(3, 32, 9, 'fill-in-the-blank'),
-    ],
+        ...generateQuestions(3, 27, 5, 'multiple-choice'),
+        ...generateQuestions(3, 32, 4, 'multiple-choice', 3), // Y/N/NG
+        ...generateQuestions(3, 36, 5, 'multiple-answer', 6),
+    ].map(q => ({ ...q, id: String(q.id) })),
   },
 ];
 
