@@ -31,9 +31,6 @@ const moduleNavLinks = [
 const secondaryNavLinks = [
     { href: '/mock-tests', label: 'Mock Tests' },
     { href: '/mentor', label: 'AI Mentor' },
-    { href: '/listening-lab', label: 'Listening Lab' },
-    { href: '/thinking-lab', label: 'Thinking Lab' },
-    { href: '/pronunciation-lab', label: 'Pronunciation Lab' },
 ];
 
 // Mobile nav combines all in-app links
@@ -47,9 +44,9 @@ const mobileNavLinks = [
   { href: '/reading', label: 'Reading', icon: BookOpen },
   { href: '/mock-tests', label: 'Mock Tests', icon: ClipboardCheck },
   { href: '/mentor', label: 'AI Mentor', icon: MessageSquare },
-  { href: '/listening-lab', label: 'Listening Lab', icon: Ear },
-  { href: '/thinking-lab', label: 'Thinking Lab', icon: Lightbulb },
-  { href: '/pronunciation-lab', label: 'Pronunciation Lab', icon: Microscope },
+  { href: '/foundation-skills/listening-lab', label: 'Listening Lab', icon: Ear },
+  { href: '/foundation-skills/thinking-lab', label: 'Thinking Lab', icon: Lightbulb },
+  { href: '/foundation-skills/pronunciation-lab', label: 'Pronunciation Lab', icon: Microscope },
 ];
 
 // Public navigation for the landing page

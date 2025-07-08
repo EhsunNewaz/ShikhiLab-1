@@ -1,5 +1,5 @@
 
-import { BookMarked, Mic, PenSquare, Ear, BookOpen, BookCheck, Repeat, ClipboardCheck } from 'lucide-react';
+import { BookMarked, Mic, PenSquare, Ear, BookOpen, BookCheck, Repeat, ClipboardCheck, Lightbulb, Microscope } from 'lucide-react';
 
 export type SubQuestion = {
     id: string;
@@ -157,7 +157,21 @@ export const foundationSkills = {
                 ]
             }
         ] as FluencyExercise[]
-    }
+    },
+    thinkingLab: {
+        title: "Thinking Lab",
+        description: "Master abstract thinking for IELTS Speaking Part 3.",
+        icon: Lightbulb,
+        href: "/foundation-skills/thinking-lab",
+        lessons: []
+    },
+    pronunciationLab: {
+        title: "Pronunciation Lab",
+        description: "Get detailed feedback on rhythm, linking, and sounds.",
+        icon: Microscope,
+        href: "/foundation-skills/pronunciation-lab",
+        lessons: []
+    },
 }
 
 
