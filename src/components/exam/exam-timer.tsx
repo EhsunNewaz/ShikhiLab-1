@@ -33,10 +33,12 @@ export function ExamTimer({ initialMinutes = 60, onTimeUp }: TimerProps) {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  const tooltipDisplay = `${minutes} minutes and ${seconds} seconds remaining`;
+  const minutesDisplay = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  const tooltipDisplay = `${String(minutes).padStart(2, '0')}:${String(
+    seconds
+  ).padStart(2, '0')} remaining`;
   
-  const initialDisplay = `${String(initialMinutes).padStart(2, '0')}:00`;
+  const initialDisplay = `${initialMinutes} minutes`;
 
   return (
     <TooltipProvider>
@@ -44,7 +46,7 @@ export function ExamTimer({ initialMinutes = 60, onTimeUp }: TimerProps) {
         <TooltipTrigger asChild>
           <div className="flex items-center gap-2 font-semibold text-gray-700">
             <Clock className="h-5 w-5" />
-            <span className="text-lg tabular-nums">{mounted ? display : initialDisplay}</span>
+            <span className="text-lg">{mounted ? minutesDisplay : initialDisplay}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent>
