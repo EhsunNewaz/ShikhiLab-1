@@ -263,18 +263,16 @@ export default function MockTestPage() {
   // Effect to update question status when an answer changes
   useEffect(() => {
     if (isSubmitted) return;
-    const answeredQuestionIds = Object.keys(answers).filter(id => {
-        const answer = answers[id];
-        if (Array.isArray(answer)) return answer.length > 0;
-        return !!answer;
-    });
     
     setQuestions(prevQuestions =>
       prevQuestions.map(q => {
-        if (answeredQuestionIds.includes(q.id) && q.status === 'unanswered') {
+        const answer = answers[q.id];
+        const isAnswered = Array.isArray(answer) ? answer.length > 0 : !!answer;
+        
+        if (isAnswered && q.status !== 'reviewed') {
           return { ...q, status: 'answered' };
         }
-        if (!answeredQuestionIds.includes(q.id) && q.status === 'answered') {
+        if (!isAnswered && q.status === 'answered') {
             return { ...q, status: 'unanswered' };
         }
         return q;
@@ -359,7 +357,10 @@ export default function MockTestPage() {
         const currentQuestion = newQuestions[currentQuestionIndex];
         
         if (currentQuestion.status === 'reviewed') {
-          currentQuestion.status = answers[currentQuestion.id] ? 'answered' : 'unanswered';
+          const isAnswered = Array.isArray(answers[currentQuestion.id])
+            ? answers[currentQuestion.id].length > 0
+            : !!answers[currentQuestion.id];
+          currentQuestion.status = isAnswered ? 'answered' : 'unanswered';
         } else {
           currentQuestion.status = 'reviewed';
         }
@@ -367,7 +368,11 @@ export default function MockTestPage() {
       });
   };
 
-  const currentPassageIndex = questions[currentQuestionIndex].passage - 1;
+  const currentPassageIndex = questions[currentQuestionIndex]?.passage - 1;
+
+  if (currentPassageIndex === undefined) {
+    return <div>Loading test...</div>
+  }
 
   return (
     <>
@@ -375,6 +380,9 @@ export default function MockTestPage() {
             onTimeUp={handleTimeUp}
             isSubmitted={isSubmitted}
             onSubmit={() => setShowSubmitDialog(true)}
+            onNext={handleNextQuestion}
+            onPrev={handlePrevQuestion}
+            onToggleReview={handleToggleReview}
         >
             <SplitScreenLayout
             leftPanel={
@@ -405,9 +413,6 @@ export default function MockTestPage() {
                 questions={questions}
                 currentQuestionIndex={currentQuestionIndex}
                 onSelectQuestion={handleSelectQuestion}
-                onNext={handleNextQuestion}
-                onPrev={handlePrevQuestion}
-                onToggleReview={handleToggleReview}
                 isSubmitted={isSubmitted}
             />
         </ExamShell>

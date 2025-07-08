@@ -14,6 +14,9 @@ interface ExamShellProps {
   onTimeUp: () => void;
   isSubmitted: boolean;
   onSubmit: () => void;
+  onNext: () => void;
+  onPrev: () => void;
+  onToggleReview: () => void;
 }
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -23,6 +26,9 @@ export function ExamShell({
   onTimeUp,
   isSubmitted,
   onSubmit,
+  onNext,
+  onPrev,
+  onToggleReview,
 }: ExamShellProps) {
   const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
   const [showInactivityModal, setShowInactivityModal] = useState(false);
@@ -107,10 +113,13 @@ export function ExamShell({
         onTimeUp={onTimeUp}
         isSubmitted={isSubmitted}
         onSubmit={onSubmit}
+        onNext={onNext}
+        onPrev={onPrev}
+        onToggleReview={onToggleReview}
       />
 
       {/* Main Content Area - with padding for header and footer */}
-      <main className="h-full bg-white pt-[60px] pb-[160px]">
+      <main className="h-full bg-white pt-[60px] pb-[72px]">
         {children}
       </main>
 
