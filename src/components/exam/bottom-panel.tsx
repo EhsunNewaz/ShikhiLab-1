@@ -113,17 +113,17 @@ export function BottomPanel({
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-20 border-t bg-gray-100 font-exam p-2 flex items-center justify-between gap-4 shadow-top">
-        {/* Question Palette - Flexible */}
-        <div className="flex-grow flex-shrink min-w-0">
-            <div className="flex items-center gap-3">
+    <footer className="fixed bottom-0 left-0 right-0 z-20 border-t bg-gray-100 font-exam p-2 flex items-center gap-4 shadow-top">
+        {/* Question Palette Container (Flexible) */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+             <div className="flex items-center gap-3">
                 {renderPart(1)}
                 {renderPart(2)}
                 {renderPart(3)}
             </div>
         </div>
 
-        {/* Action Buttons - Fixed */}
+        {/* Action Button Container (Fixed) */}
         <div className="flex-shrink-0 flex items-center gap-3 pr-2">
             <Button variant="outline" size="icon" className="h-10 w-10 border-2 border-gray-400 bg-gray-200" onClick={onReview} disabled={isSubmitted}>
                 <Flag className="h-5 w-5 text-yellow-600" />
