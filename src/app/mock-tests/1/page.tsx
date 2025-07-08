@@ -360,9 +360,9 @@ function QuestionPanel({
     <div className="font-exam bg-gray-50/50">
       <div className="p-4 border-b">
         <h2 className="font-bold text-lg">{questionRangeText}</h2>
-        <p className="text-sm text-gray-600 mt-1">
+        <div className="text-sm text-gray-600 mt-1">
           <InteractivePassage id={`instruction-${firstQuestion.id}`} text={firstQuestion.instruction} {...passageProps} />
-        </p>
+        </div>
       </div>
       <div className="space-y-1 p-2">
         {questionGroup.map((question) => {
@@ -481,7 +481,7 @@ export default function MockTestPage() {
         console.log('Time is up! Submitting test.');
         handleSubmit();
     }
-  }, [isSubmitted]);
+  }, [isSubmitted, handleSubmit]);
   
   const handleSubmit = async () => {
     setShowSubmitDialog(false);
