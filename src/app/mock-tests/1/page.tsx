@@ -20,7 +20,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 // Get the mock reading test for demonstration
@@ -55,108 +54,6 @@ function ResultsCard({ score, total }: { score: number; total: number }) {
     </Card>
   );
 }
-
-function TrueFalseNotGivenRenderer({
-    question,
-    answers,
-    onAnswerChange,
-    isSubmitted,
-    ...passageProps
-}: {
-    question: ReadingQuestionData;
-    answers: Record<string, any>;
-    onAnswerChange: (questionId: string, subQuestionId: string, value: any) => void;
-    isSubmitted: boolean;
-    annotations: Annotation[];
-    setAnnotations: (annotations: Annotation[]) => void;
-    scrollToAnnotationId: string | null;
-    onScrollComplete: () => void;
-}) {
-    const [activeSubQuestionId, setActiveSubQuestionId] = useState<string>(question.subQuestions![0].id);
-
-    const activeSubQuestionAnswer = answers[question.id]?.[activeSubQuestionId] || '';
-
-    const handleAnswerSelect = (value: string) => {
-        onAnswerChange(question.id, activeSubQuestionId, value);
-    };
-    
-    const renderFeedback = (subQuestionId: string) => {
-        if (!isSubmitted) return null;
-        
-        const userAnswer = answers[question.id]?.[subQuestionId];
-        const correctAnswer = question.correctAnswer[subQuestionId];
-        const isCorrect = userAnswer === correctAnswer;
-        
-        return (
-          <div className={cn("p-2 text-sm rounded-md", isCorrect ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")}>
-            <p>
-              Your answer: <span className="font-semibold">{userAnswer || 'No Answer'}</span>. 
-              Correct answer: <span className="font-semibold">{correctAnswer}</span>.
-            </p>
-          </div>
-        );
-    };
-
-    return (
-        <div className="space-y-2">
-            <div className="space-y-2">
-                {question.subQuestions!.map(subQ => {
-                    const isSubQuestionActive = activeSubQuestionId === subQ.id;
-                    const userAnswer = answers[question.id]?.[subQ.id];
-                    
-                    return (
-                        <div key={subQ.id}>
-                            <button
-                                onClick={() => !isSubmitted && setActiveSubQuestionId(subQ.id)}
-                                disabled={isSubmitted}
-                                className={cn(
-                                    "w-full text-left p-3 rounded-md border transition-colors",
-                                    isSubQuestionActive && !isSubmitted ? "bg-blue-50 border-blue-500" : "bg-gray-50 border-gray-200",
-                                    !isSubmitted && "hover:bg-blue-50/50"
-                                )}
-                            >
-                                <div className="flex justify-between items-center">
-                                    <p className="flex-1">
-                                        <span className="font-bold mr-2">{subQ.id}.</span>
-                                        <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="span" {...passageProps} />
-                                    </p>
-                                    {isSubmitted && (
-                                         <Badge className={cn(userAnswer === question.correctAnswer[subQ.id] ? "bg-green-500" : "bg-destructive")}>
-                                             {userAnswer || 'N/A'}
-                                         </Badge>
-                                    )}
-                                </div>
-                            </button>
-                            {isSubmitted && renderFeedback(subQ.id)}
-                        </div>
-                    );
-                })}
-            </div>
-            
-            <div className="pt-4">
-                 <ExamRadioGroup
-                    value={activeSubQuestionAnswer}
-                    onValueChange={handleAnswerSelect}
-                    disabled={isSubmitted}
-                    className="flex flex-col gap-3"
-                >
-                    {question.options!.map(opt => (
-                        <ExamRadioGroupItem 
-                            key={opt}
-                            value={opt} 
-                            id={`${activeSubQuestionId}-${opt}`} 
-                            label={opt} 
-                            disabled={isSubmitted} 
-                            passageProps={passageProps}
-                            variant='default'
-                        />
-                    ))}
-                </ExamRadioGroup>
-            </div>
-        </div>
-    );
-}
-
 
 // Component to render a single question based on its type
 function QuestionRenderer({
@@ -280,13 +177,50 @@ function QuestionRenderer({
         );
     case 'true-false-not-given':
     case 'yes-no-not-given':
-        return <TrueFalseNotGivenRenderer
-            question={question}
-            answers={answers}
-            onAnswerChange={onAnswerChange}
-            isSubmitted={isSubmitted}
-            {...passageProps}
-        />;
+        return (
+            <div className="space-y-6">
+                {question.subQuestions!.map(subQ => {
+                    const userAnswer = answers[question.id]?.[subQ.id] || '';
+                    const isCorrect = isSubmitted && userAnswer === question.correctAnswer[subQ.id];
+
+                    return (
+                        <div key={subQ.id}>
+                            <div className="flex items-start gap-3">
+                                <span className="flex h-7 w-7 items-center justify-center rounded border-2 border-gray-500 font-bold text-gray-800 flex-shrink-0 mt-0.5">{subQ.id}</span>
+                                <InteractivePassage id={`q-${subQ.id}`} text={subQ.text} as="p" {...passageProps} />
+                            </div>
+                            <ExamRadioGroup
+                                value={userAnswer}
+                                onValueChange={(value) => handleSubQuestionChange(subQ.id, value)}
+                                disabled={isSubmitted}
+                                className="mt-2 space-y-1 pl-10"
+                            >
+                                {question.options!.map(opt => {
+                                    const isSelected = userAnswer === opt;
+                                    return (
+                                        <div key={opt} className={cn(
+                                            "flex items-center rounded-md p-2 transition-colors",
+                                            isSelected && !isSubmitted && "bg-blue-100",
+                                            isSubmitted && isCorrect && isSelected && "bg-green-100",
+                                            isSubmitted && !isCorrect && isSelected && "bg-red-100"
+                                        )}>
+                                            <ExamRadioGroupItem 
+                                                value={opt} 
+                                                id={`${subQ.id}-${opt}`}
+                                                label={opt}
+                                                disabled={isSubmitted}
+                                                passageProps={passageProps}
+                                            />
+                                        </div>
+                                    )
+                                })}
+                            </ExamRadioGroup>
+                            {isSubmitted && renderFeedback(subQ.id, isCorrect, question.correctAnswer[subQ.id], question.explanation)}
+                        </div>
+                    )
+                })}
+            </div>
+        );
     case 'multiple-answer':
         const userAnswerMA = answers[question.id]?.[question.id] || [];
         const selectedCount = userAnswerMA.length;
@@ -384,69 +318,6 @@ function QuestionRenderer({
     default:
       return <p>Unsupported question type</p>;
   }
-}
-
-function QuestionPanel({
-  questions,
-  answers,
-  onAnswerChange,
-  isSubmitted,
-  ...passageProps
-}: {
-  questions: ReadingQuestionData[];
-  answers: Record<string, any>;
-  onAnswerChange: (questionId: string, subQuestionId: string, value: any) => void;
-  isSubmitted: boolean;
-  annotations: Annotation[];
-  setAnnotations: (annotations: Annotation[]) => void;
-  scrollToAnnotationId: string | null;
-  onScrollComplete: () => void;
-}) {
-
-  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(questions[0]?.id || null);
-
-  const handleToggle = (questionId: string) => {
-    setActiveQuestionId(prevId => prevId === questionId ? null : questionId);
-  }
-
-  return (
-    <div className="font-exam bg-gray-50/50">
-        <div className="w-full">
-            {questions.map((question) => {
-                const firstSubId = question.subQuestions ? question.subQuestions[0].id : question.id;
-                const lastSubId = question.subQuestions ? question.subQuestions[question.subQuestions.length -1].id : question.id;
-                const questionRangeText = firstSubId === lastSubId ? `Question ${firstSubId}` : `Questions ${firstSubId}-${lastSubId}`;
-                const isActive = activeQuestionId === question.id;
-                
-                return (
-                     <div key={question.id} className="border-b">
-                        <button 
-                            className="w-full p-4 text-left hover:bg-gray-100 disabled:cursor-not-allowed text-base font-semibold text-gray-800"
-                            onClick={() => handleToggle(question.id)}
-                            disabled={isSubmitted}
-                        >
-                           {questionRangeText}
-                        </button>
-                        {isActive && (
-                            <div className="p-4 border-t border-gray-200">
-                                <div className="text-sm text-gray-600 mb-4">
-                                    <InteractivePassage id={`instruction-${question.id}`} text={question.instruction} {...passageProps} as="div" />
-                                </div>
-                                <QuestionRenderer
-                                    question={question}
-                                    answers={answers}
-                                    onAnswerChange={onAnswerChange}
-                                    isSubmitted={isSubmitted}
-                                    {...passageProps}
-                                />
-                            </div>
-                        )}
-                    </div>
-                )
-            })}
-        </div>
-    </div>
-  );
 }
 
 export default function MockTestPage() {
@@ -667,6 +538,17 @@ export default function MockTestPage() {
   if (currentPassageIndex === undefined) {
     return <div>Loading test...</div>
   }
+  
+  // Group questions by instruction
+  const questionGroups: { instruction: string, questions: ReadingQuestionData[] }[] = [];
+  passageQuestions.forEach(q => {
+      const lastGroup = questionGroups[questionGroups.length - 1];
+      if (lastGroup && lastGroup.instruction === q.instruction) {
+          lastGroup.questions.push(q);
+      } else {
+          questionGroups.push({ instruction: q.instruction, questions: [q] });
+      }
+  });
 
   return (
     <>
@@ -701,15 +583,35 @@ export default function MockTestPage() {
             rightPanel={
               <>
                 <ScrollArea className="h-full">
-                    <div className="pb-48"> {/* Padding at bottom for floating buttons */}
+                    <div className="p-4 pb-48 space-y-8">
                         {isSubmitted && <ResultsCard score={score} total={totalQuestions} />}
-                        <QuestionPanel
-                            questions={passageQuestions}
-                            answers={answers}
-                            onAnswerChange={handleAnswerChange}
-                            isSubmitted={isSubmitted}
-                            {...passageProps}
-                        />
+                        {questionGroups.map((group, index) => {
+                             const firstQuestionId = group.questions[0].subQuestions ? group.questions[0].subQuestions![0].id : group.questions[0].id;
+                             const lastQuestion = group.questions[group.questions.length - 1];
+                             const lastQuestionId = lastQuestion.subQuestions ? lastQuestion.subQuestions[lastQuestion.subQuestions.length -1].id : lastQuestion.id;
+                             const rangeText = firstQuestionId === lastQuestionId ? `Question ${firstQuestionId}` : `Questions ${firstQuestionId}-${lastQuestionId}`;
+
+                            return (
+                                <div key={index}>
+                                    <div className="mb-4">
+                                        <h3 className="font-bold text-gray-800">{rangeText}</h3>
+                                        <InteractivePassage id={`instruction-${index}`} text={group.instruction} {...passageProps} as="div" className="text-sm text-gray-700" />
+                                    </div>
+                                    <div className="space-y-4">
+                                        {group.questions.map(question => (
+                                             <QuestionRenderer
+                                                key={question.id}
+                                                question={question}
+                                                answers={answers}
+                                                onAnswerChange={handleAnswerChange}
+                                                isSubmitted={isSubmitted}
+                                                {...passageProps}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 </ScrollArea>
               </>
@@ -724,3 +626,4 @@ export default function MockTestPage() {
     </>
   );
 }
+
