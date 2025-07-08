@@ -47,13 +47,13 @@ const ContextMenuPopup = ({ state, annotations, onHighlight, onNote, onClear, on
     return (
          <div
             data-popup="true"
-            className="absolute z-50 flex flex-col min-w-[180px] rounded-md shadow-lg bg-white border border-gray-300 text-sm"
+            className="absolute z-50 flex flex-col min-w-[180px] rounded-md shadow-lg bg-white border border-gray-300 text-sm font-exam"
             style={{ top: state.y, left: state.x }}
          >
             {state.type === 'selection' && (
                 <>
                     <button onClick={onHighlight} className="text-left px-4 py-2 hover:bg-gray-100">Highlight</button>
-                    <button onClick={onNote} className="text-left px-4 py-2 hover:bg-gray-100">Notes</button>
+                    <button onClick={onNote} className="text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>Notes</button>
                 </>
             )}
             {state.type === 'annotation' && currentAnnotation && (
@@ -61,8 +61,8 @@ const ContextMenuPopup = ({ state, annotations, onHighlight, onNote, onClear, on
                     {currentAnnotation.type === 'note' && (
                          <button onClick={() => onViewNote(currentAnnotation.id)} className="text-left px-4 py-2 hover:bg-gray-100">View/Edit Note</button>
                     )}
-                    <button onClick={() => onClear(currentAnnotation.id)} className="text-left px-4 py-2 hover:bg-gray-100">Clear</button>
-                    <button onClick={onClearAll} className="text-left px-4 py-2 hover:bg-gray-100">Clear All</button>
+                    <button onClick={() => onClear(currentAnnotation.id)} className="text-left px-4 py-2 text-gray-400 hover:bg-gray-100 hover:text-gray-800">Clear</button>
+                    <button onClick={onClearAll} className="text-left px-4 py-2 text-gray-400 hover:bg-gray-100 hover:text-gray-800">Clear All</button>
                 </>
             )}
          </div>
@@ -73,13 +73,36 @@ const ContextMenuPopup = ({ state, annotations, onHighlight, onNote, onClear, on
 const NotesPanel = ({ noteText, onClose, onSave }: { noteText: string; onClose: () => void; onSave: (text: string) => void; }) => {
   const nodeRef = useRef(null);
   const [text, setText] = useState(noteText);
+  const [isSaving, setIsSaving] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const charLimit = 1000;
   
+  const handleSave = () => {
+    setIsSaving(true);
+    onSave(text);
+    setTimeout(() => setIsSaving(false), 500); // Visual feedback
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+  };
+  
+  useEffect(() => {
+    // Auto-save logic
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+        handleSave();
+    }, 10000); // Auto-save every 10 seconds
+
+    return () => {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+
   return (
-    <Draggable handle=".handle" nodeRef={nodeRef} defaultPosition={{x: 200, y: 100}}>
+    <Draggable handle=".handle" nodeRef={nodeRef} bounds="parent">
         <div ref={nodeRef} className="fixed z-40 w-[300px]" data-popup="true">
-            <div className="h-[400px] flex flex-col bg-[#fffacd] border-gray-400 shadow-2xl">
-                <div className="handle flex flex-row items-center justify-between p-3 bg-gray-200/50 cursor-move">
-                    <h3 className="text-base font-semibold text-gray-800">Notes</h3>
+            <div className="h-[400px] flex flex-col bg-[#fffacd] border-gray-400 shadow-2xl rounded-md overflow-hidden">
+                <div className="handle flex flex-row items-center justify-between p-3 bg-yellow-200/50 cursor-move border-b border-yellow-400/50">
+                    <h3 className="text-base font-semibold text-gray-800">Note</h3>
                     <Button 
                         variant="ghost" 
                         size="icon" 
@@ -96,8 +119,14 @@ const NotesPanel = ({ noteText, onClose, onSave }: { noteText: string; onClose: 
                         placeholder="Type your notes here..."
                         value={text}
                         onChange={(e) => setText(e.target.value)}
+                        maxLength={charLimit}
                     />
-                    <Button onClick={() => onSave(text)} size="sm" className="self-end">Save and Close</Button>
+                    <div className="flex justify-between items-center">
+                         <span className="text-xs text-gray-500">{text.length} / {charLimit}</span>
+                         <Button onClick={handleSave} size="sm" className="self-end" disabled={isSaving}>
+                            {isSaving ? 'Saved!' : 'Save & Close'}
+                         </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -201,8 +230,9 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
   
   const handleUpdateNote = (annotationId: string, text: string) => {
     setAnnotations(prev => prev.map(ann => 
-        ann.id === annotationId ? { ...ann, noteText: text } : ann
+        ann.id === annotationId ? { ...ann, noteText: text, type: 'note' } : ann
     ));
+    setNotesPanel({visible: false, annotationId: '', noteText: ''});
   };
 
   const removeAnnotation = (id: string) => {
@@ -238,7 +268,7 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
       parts.push(
         <span
           key={annotation.id}
-          className={cn('cursor-pointer relative bg-[#FFFF99]')}
+          className={cn('cursor-pointer relative bg-exam-highlight')}
           data-annotation-id={annotation.id}
         >
           {text.substring(annotation.start, annotation.end)}
@@ -277,14 +307,15 @@ export function InteractivePassage({ text, as: Comp = 'div', className }: Intera
       )}
 
       {notesPanel.visible && (
-          <NotesPanel 
-              noteText={notesPanel.noteText}
-              onClose={() => setNotesPanel(prev => ({...prev, visible: false}))}
-              onSave={(text) => {
-                  handleUpdateNote(notesPanel.annotationId, text);
-                  setNotesPanel(prev => ({...prev, visible: false}));
-              }}
-          />
+          <div className='absolute inset-0' data-popup="true">
+            <NotesPanel 
+                noteText={notesPanel.noteText}
+                onClose={() => setNotesPanel(prev => ({...prev, visible: false}))}
+                onSave={(text) => {
+                    handleUpdateNote(notesPanel.annotationId, text);
+                }}
+            />
+          </div>
       )}
     </div>
   );
